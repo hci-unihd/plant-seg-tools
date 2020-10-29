@@ -50,9 +50,14 @@ def read_h5_voxel_size(f, h5key):
     return voxel_size
 
 
-def load_h5(path, key):
+def load_h5(path, key, slices=None):
+
     with h5py.File(path, 'r') as f:
-        file = f[key][...]
+        if slices is None:
+            file = f[key][...]
+        else:
+            file = f[key][slices]
+
         voxel_size = read_h5_voxel_size(f, key)
 
     return file, voxel_size
