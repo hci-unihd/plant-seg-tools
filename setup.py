@@ -4,7 +4,7 @@ exec(open('plantsegtools/__version__.py').read())
 setup(
     name='plantsegtools',
     version=__version__,
-    packages=find_packages(exclude=["tests", "evaluation"]),
+    packages=find_packages(exclude=["tests"]),
     include_package_data=True,
     description='Suite of Python tools for plant-seg https://github.com/hci-unihd/plant-seg',
     author='Lorenzo Cerrone, Adrian Wolny',
