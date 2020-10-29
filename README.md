@@ -14,5 +14,5 @@ git clone https://github.com/hci-unihd/plant-seg-tools.git
 * install `plant-seg-tools`:
 ```
 cd plant-seg-tools
-python setup.py install
+pip install .
 ```
