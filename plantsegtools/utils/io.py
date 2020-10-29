@@ -1,6 +1,11 @@
 import tifffile
 import h5py
 import warnings
+import os
+
+TIFF_FORMATS = ['.tiff', '.tif']
+H5_FORMATS = ['.h5', '.hdf']
+LIF_FORMATS = ['.lif']
 
 
 def read_tiff_voxel_size(file_path):
@@ -53,6 +58,9 @@ def read_h5_voxel_size(f, h5key):
 def load_h5(path, key, slices=None):
 
     with h5py.File(path, 'r') as f:
+        if key is None:
+            key = list(f.keys())[0]
+
         if slices is None:
             file = f[key][...]
         else:
@@ -70,7 +78,23 @@ def load_tiff(path):
 
 
 def load_lif():
-    pass
+    raise NotImplementedError
+
+
+def smart_load(path, key=None, default=load_tiff):
+    _, ext = os.path.splitext(path)
+    if ext in H5_FORMATS:
+        return load_h5(path, key)
+
+    elif ext in TIFF_FORMATS:
+        return load_tiff(path)
+
+    elif ext in LIF_FORMATS:
+        return load_lif(path)
+
+    else:
+        print(f"No default found for {ext}, reverting to default loader")
+        return default(path)
 
 
 def create_h5(path, stack, key, voxel_size=(1.0, 1.0, 1.0), mode='a'):
