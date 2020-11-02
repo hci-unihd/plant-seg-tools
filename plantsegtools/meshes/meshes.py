@@ -8,7 +8,7 @@ from plantsegtools.utils.clean_segmentation import relabel_segmentation
 from plantsegtools.utils.io import smart_load
 
 
-def filter_2d_masks(mask):
+def _filter_2d_masks(mask):
     _z, _x, _y = np.nonzero(mask)
     # returns True only if mask is not flat in any dimension
     return _z.max() > _z.min() and _x.max() > _x.min() and _y.max() > _y.min()
@@ -27,7 +27,7 @@ def mask2mesh(mask, voxel_size=(1.0, 1.0, 1.0), level=0, step_size=2, preprocess
 
     # create mesh using marching cubes
     vertx, faces, normals, _ = measure.marching_cubes(mask, level=level, spacing=voxel_size, step_size=step_size)
-    mesh = trimesh.Trimesh(vertices=vertx, faces=faces)#, vertex_normals=normals)
+    mesh = trimesh.Trimesh(vertices=vertx, faces=faces, vertex_normals=normals)
 
     # apply mesh postprocessing
     mesh = mesh if postprocessing is None else postprocessing(mesh)
@@ -39,14 +39,15 @@ def masks_generator(segmentation, min_size=50, max_size=np.inf, relabel_cc=True)
     segmentation = relabel_segmentation(segmentation) if relabel_cc else segmentation
 
     # Filter small and large segments
-    all_idx, counts = np.unique(segmentation, return_counts=True)
-    filtered_idx = filter(lambda x: min_size < x[1] < max_size, zip(all_idx, counts))
+    counts = np.bincount(segmentation.ravel())
+    objects_list = list(filter(lambda x: x[1] != 0 and min_size < x[1] < max_size, enumerate(counts)))
+    filtered_idx = np.asarray(objects_list)[:, 0]
 
     # yield idx and masks
-    for idx, _ in filtered_idx:
+    for idx in filtered_idx:
         mask = segmentation == idx
 
-        if filter_2d_masks(mask):
+        if _filter_2d_masks(mask):
             yield idx, mask
 
 

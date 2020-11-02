@@ -1,38 +1,84 @@
 import numpy as np
 from scipy import ndimage
 from skimage import measure
+import numba
 
 
 def relabel_segmentation(seg):
+    """
+    Relabel contiguously a segmentation image, non-touching instances with same id will be relabeled differently.
+    To be noted that measure.label is different from ndimage.label
+    Example:
+        x = np.zeros((5, 5))
+        x[:2], x[2], x[3:]= 1, 2, 1
+        print(x)
+        print(ndimage.label(x)[0])
+        print(measure.label(x))
+
+        x = np.zeros((5, 5))
+        x[:2], x[2], x[3:]= 1, 0, 1
+        print(x)
+        print(ndimage.label(x)[0])
+        print(measure.label(x))
+    """
     return measure.label(seg)
 
 
-def remove_listed_object(seg, object_list, not_listed_mode=False, background_label=0):
+@numba.njit()
+def _replace(arr, needle, replace=0):
+    """
+    arr must a 1d array and needles must be a set.
+
+    Code sourced from:
+    https://stackoverflow.com/questions/43942943/set-specific-values-to-zero-in-numpy-array
+    """
+    needles = set(needle)
+    for idx in range(arr.size):
+        if arr[idx] in needles:
+            arr[idx] = replace
+    return arr
+
+
+def remove_listed_objects(segmentation, objects_list, not_listed_mode=False, background_label=0, inplace=False,
+                          unique=None):
+    """
+    Remove listed indices from a segmentation image.
+    segmentation: integer array
+    object list: list of indices to be removed from the segmentation image
+    not_listed_mode: if True only listed object are going to be preserved
+    """
+    _seg = segmentation if inplace else np.copy(segmentation)
 
     if not_listed_mode:
-        labels = np.unique(seg)
-        object_list = list(filter(lambda _obj: _obj not in object_list, labels))
+        labels = np.unique(_seg) if unique is None else unique
+        objects_list = list(filter(lambda _obj: _obj not in objects_list,
+                                   labels))
 
-    for obj in object_list:
-        seg[seg == obj] = background_label
+    objects_list = np.asarray(objects_list)
+    _seg = _replace(_seg.ravel(), objects_list, background_label).reshape(_seg.shape)
+    return _seg
 
-    return seg
 
-
-def remove_small_object(seg, min_size=0, units='voxel', background_label=0):
+def segment_size_filter(segmentation, min_size=0,
+                        max_size=np.inf,
+                        voxel_size=(1.0, 1.0, 1.0),
+                        background_label=0,
+                        inplace=False):
     """
-    do not use, use skimage instead
+    filter segments smaller of min_size or larger than max_size.
+    If voxel_size is defined then min_size and max_size will have the same units.
     """
-    if units != 'voxel':
-        raise NotImplementedError
+    _seg = segmentation if inplace else np.copy(segmentation)
 
-    objects, counts = np.unique(seg, return_counts=True)
-    objects = objects[list(map(lambda _count: _count > min_size, counts))]
+    min_size *= np.prod(voxel_size)
+    max_size *= np.prod(voxel_size)
 
-    for obj in objects:
-        seg[seg == obj] = background_label
+    counts = np.bincount(_seg.ravel())
+    objects_list = list(filter(lambda x: x[1] != 0 and x[1] < min_size or x[1] > max_size, enumerate(counts)))
+    objects_list = np.asarray(objects_list)[:, 0]
 
-    return seg
+    _seg = _replace(_seg.ravel(), objects_list, background_label).reshape(_seg.shape)
+    return _seg
 
 
 def get_largest_object(mask):
