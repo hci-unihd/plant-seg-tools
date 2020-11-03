@@ -91,3 +91,9 @@ def get_largest_object(mask):
         return mask
     else:
         return labels == np.argmax(np.bincount(labels.flat)[1:]) + 1
+
+
+def filter_2d_masks(mask):
+    _z, _x, _y = np.nonzero(mask)
+    # returns True only if mask is not flat in any dimension
+    return _z.max() > _z.min() and _x.max() > _x.min() and _y.max() > _y.min()
