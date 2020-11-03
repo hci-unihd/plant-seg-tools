@@ -72,19 +72,19 @@ def _seg2mesh(idx, mask,
     create_ply(f"{base_path}/{base_name}_{idx:05d}.ply", mesh)
 
 
-def seg2mesh_mp(stack_path,
-                base_name='test_stack',
-                base_path='./test-ply/',
-                n_process=2,
-                h5_key='label',
-                voxel_size=None,
-                preprocessing=None,
-                postprocessing=None,
-                min_size=50,
-                max_size=np.inf,
-                idx_list=None,
-                relabel_cc=False
-                ):
+def seg2mesh(stack_path,
+             base_name='test_stack',
+             base_path='./test-ply/',
+             n_process=2,
+             h5_key='label',
+             voxel_size=None,
+             preprocessing=None,
+             postprocessing=None,
+             min_size=50,
+             max_size=np.inf,
+             idx_list=None,
+             relabel_cc=False
+             ):
 
     stack, _voxel_size = smart_load(stack_path, h5_key)
     voxel_size = _voxel_size if voxel_size is None else (1.0, 1.0, 1.0)
@@ -111,5 +111,5 @@ if __name__ == '__main__':
     import time
     timer = time.time()
     sample_path = "/home/lcerrone/datasets/small_samples/sample_ovules.h5"
-    seg2mesh_mp(sample_path, max_size=10000, nprocess=2)
+    seg2mesh_mp(sample_path, max_size=10000, n_process=2)
     print("global timer: ", time.time() - timer)
