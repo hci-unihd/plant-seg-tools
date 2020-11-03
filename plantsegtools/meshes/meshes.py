@@ -41,12 +41,12 @@ def masks_generator(segmentation, min_size=50, max_size=np.inf, idx_list=None, r
     segmentation = relabel_segmentation(segmentation) if relabel_cc and idx_list is None else segmentation
 
     if idx_list is None:
-        filtered_idx = idx_list
-    else:
         # Filter small and large segments
         counts = np.bincount(segmentation.ravel())
         objects_list = list(filter(lambda x: min_size < x[1] < max_size and x[0] not in remove_labels, enumerate(counts)))
         filtered_idx = np.asarray(objects_list)[:, 0]
+    else:
+        filtered_idx = idx_list
 
     # yield idx and masks
     for idx in filtered_idx:
@@ -111,6 +111,7 @@ def seg2mesh(stack_path,
 if __name__ == '__main__':
     import time
     timer = time.time()
-    sample_path = "/home/lcerrone/datasets/small_samples/sample_ovules.h5"
+    #sample_path = "/home/lcerrone/datasets/small_samples/sample_ovules.h5"
+    sample_path = "/home_sdc/lcerrone_tmp/datasets/small_samples/sample_ovules.h5"
     seg2mesh(sample_path, max_size=10000, n_process=2)
     print("global timer: ", time.time() - timer)
