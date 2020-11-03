@@ -1,4 +1,3 @@
-import concurrent.futures
 import multiprocessing as mp
 import numpy as np
 import trimesh
