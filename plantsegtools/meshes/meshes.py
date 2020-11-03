@@ -111,5 +111,5 @@ if __name__ == '__main__':
     import time
     timer = time.time()
     sample_path = "/home/lcerrone/datasets/small_samples/sample_ovules.h5"
-    seg2mesh_mp(sample_path, max_size=10000, n_process=2)
+    seg2mesh(sample_path, max_size=10000, n_process=2)
     print("global timer: ", time.time() - timer)
