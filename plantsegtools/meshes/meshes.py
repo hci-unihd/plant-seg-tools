@@ -1,12 +1,13 @@
 import multiprocessing as mp
+from functools import partial
+
 import numpy as np
+import tqdm
 import trimesh
 from skimage import measure
 
 from plantsegtools.utils.clean_segmentation import relabel_segmentation
 from plantsegtools.utils.io import smart_load
-import tqdm
-from functools import partial
 
 
 def _filter_2d_masks(mask):
