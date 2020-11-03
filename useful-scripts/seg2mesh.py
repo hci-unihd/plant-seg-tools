@@ -47,6 +47,7 @@ if __name__ == '__main__':
     # Seg2mesh mesh backend is completely independent options availables are
     # 'from plantsegtools.meshes.vtkutils import CreateMeshVTK, create_ply'
     # 'from plantsegtools.meshes.trimeshutils import CreateTriMesh, create_ply'
+    # * trimesh support is experimental, is easier to use than vtk but results are worst
 
     mesh_processor = CreateMeshVTK(reduction=args.reduction, smoothing=args.smoothing)
     file_writer = create_ply
