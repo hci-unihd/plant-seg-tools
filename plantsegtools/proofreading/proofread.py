@@ -1,44 +1,83 @@
-from skimage import data
+import os
+
 import napari
-import h5py
 import numpy as np
-from skimage.transform import pyramid_gaussian
-#from plantsegtools.utils import smart_load
-from plantsegtools.utils import create_h5, del_h5_key
+from skimage.measure import label
+from skimage.segmentation import find_boundaries, watershed
+
+from plantsegtools.utils import create_h5, smart_load
+
+raw_key = 'raw'
+segmentation_key = 'segmentation'
+seg_boundaries_key = 'seg-boundaries'
 
 
-class BasicProofread:
-    def __init__(self, path, size=1000, stride=None, datasets=None):
-        self.path = path
+class BasicProofread2D:
+    def __init__(self,
+                 path_raw,
+                 path_label=None,
+                 datasets=('raw', 'label'),
+                 size=1000,
+                 stride=None):
+
+        path_label = path_raw if path_label is None else path_label
+
+        self.datasets = {raw_key: (path_raw, datasets[0]),
+                         segmentation_key: (path_label, datasets[1]),
+                         }
+
         self.size = size
         self.stride = stride
-        self.datasets = datasets
-
-        if datasets is None:
-            self.datasets = {'raw': 'raw', 'label': 'label', 'predictions': None}
 
         self.data, shapes = {}, []
-        self.croped_data = {}
+        for key, values in self.datasets.items():
+            _path, _key = values
+            stack, voxel_size = smart_load(_path, _key)
+            self.data[key] = stack
+            shapes.append(stack.shape)
 
-        with h5py.File(self.path, 'r') as f:
-            for key, value in self.datasets.items():
-                if value is not None:
-                    self.data[key] = f[value][...]
-                    shapes.append(f[value].shape)
+        self.datasets[seg_boundaries_key] = (None, seg_boundaries_key)
+        self.data[seg_boundaries_key] = self.get_seg_boundary()
 
+        assert shapes[0] == shapes[1] == shapes[2]
+
+        self.cropped_data = {}
         self.shape = shapes[0]
         self.x_pos = (self.shape[1]) // 2
         self.y_pos = (self.shape[2]) // 2
         self.stride = self.size // 4
 
-        print(self.x_pos, self.y_pos)
         self.get_crop()
+
+    def get_seg_boundary(self):
+        segmentation = self.data[segmentation_key]
+        return find_boundaries(segmentation)
+
+    def update_boundary(self):
+        _local_boundary = find_boundaries(self.cropped_data[segmentation_key])
+        self.data[seg_boundaries_key][0, self.x_pos - self.size//2:self.x_pos + self.size//2,
+                                         self.y_pos - self.size//2:self.y_pos + self.size//2] = _local_boundary
+
+    def update_segmentation(self, x, y):
+        label_idx = self.cropped_data[segmentation_key][int(x), int(y)]
+        mask = self.data[segmentation_key][0] == label_idx
+        coords = np.nonzero(mask)
+        xmin, xmax = coords[0].min() - 2, coords[0].max() + 2
+        ymin, ymax = coords[1].min() - 2, coords[1].max() + 2
+
+        _boundaries = self.data[seg_boundaries_key][0, xmin:xmax, ymin:ymax]
+        _mask = self.data[segmentation_key][0, xmin:xmax, ymin:ymax] == label_idx
+        seeds = label(_boundaries, background=1)
+        seeds[~_mask] = 0
+        _seg = watershed(np.ones_like(seeds), markers=seeds)
+        _seg += self.data[segmentation_key].max() + 1
+        self.data[segmentation_key][0, xmin:xmax, ymin:ymax][_mask] = _seg[_mask].ravel()
 
     def get_crop(self):
         for key, value in self.data.items():
-            self.croped_data[key] = value[0,
-                                          self.x_pos - self.size//2:self.x_pos + self.size//2,
-                                          self.y_pos - self.size//2:self.y_pos + self.size//2]
+            self.cropped_data[key] = value[0,
+                                           self.x_pos - self.size//2:self.x_pos + self.size//2,
+                                           self.y_pos - self.size//2:self.y_pos + self.size//2]
 
     def move(self, x, y):
         self.x_pos += x
@@ -48,74 +87,83 @@ class BasicProofread:
         self.get_crop()
 
     def update(self, viewer):
-        viewer.layers[0].data = self.croped_data['raw']
-        viewer.layers[1].data = self.croped_data['label']
+        for _layer_key in viewer.layers:
+            viewer.layers[_layer_key.name].data = self.cropped_data[_layer_key.name]
+
+    def init_layers(self, viewer):
+        viewer.add_image(self.cropped_data[raw_key], name=raw_key, multiscale=False)
+        viewer.add_labels(self.cropped_data[segmentation_key], name=segmentation_key, multiscale=False)
+        viewer.add_labels(self.cropped_data[seg_boundaries_key], name=seg_boundaries_key, multiscale=False)
 
     def __call__(self):
         with napari.gui_qt():
             viewer = napari.Viewer()
-            for key, value in self.croped_data.items():
-                if key is 'raw' or key is 'predictions':
-                    viewer.add_image(value, name=key, multiscale=False)
-                elif key is 'label':
-                    all_labels = np.unique(value)
-                    _color = {0: np.zeros(4), None: np.zeros(4)}
-                    for label in all_labels:
-                        _color[label] = np.random.rand(4)
-                        _color[label][-1] = 1.
-                    viewer.add_labels(value, name=key, multiscale=False, color=_color)
+            self.init_layers(viewer)
 
-                @viewer.bind_key('Control-Left', overwrite=True)
-                def move_left(viewer):
-                    self.move(0, -self.stride)
-                    self.update(viewer)
+            @viewer.bind_key('Control-Left')
+            def move_left(viewer):
+                """move field of view left"""
+                self.move(0, -self.stride)
+                self.update(viewer)
 
-                @viewer.bind_key('Control-Right', overwrite=True)
-                def move_right(viewer):
-                    self.move(0, self.stride)
-                    self.update(viewer)
+            @viewer.bind_key('Control-Right')
+            def move_right(viewer):
+                """move field of view right"""
+                self.move(0, self.stride)
+                self.update(viewer)
 
-                @viewer.bind_key('Control-Up', overwrite=True)
-                def move_up(viewer):
-                    self.move(-self.stride, 0)
-                    self.update(viewer)
+            @viewer.bind_key('Control-Up')
+            def move_up(viewer):
+                """move field of view up"""
+                self.move(-self.stride, 0)
+                self.update(viewer)
 
-                @viewer.bind_key('Control-Down', overwrite=True)
-                def move_down(viewer):
-                    self.move(self.stride, 0)
-                    self.update(viewer)
+            @viewer.bind_key('Control-Down')
+            def move_down(viewer):
+                """move field of view down"""
+                self.move(self.stride, 0)
+                self.update(viewer)
 
-                @viewer.bind_key('S', overwrite=True)
-                def save_current(viewer):
-                    del_h5_key(self.path, key='label_edit')
-                    create_h5(self.path, self.data['label'], key='label_edit')
-                    print('labels saved')
+            @viewer.bind_key('S')
+            def save_current(viewer):
+                """create a training stack"""
+                seg_path = self.datasets[segmentation_key][0]
+                base, ext = os.path.splitext(seg_path)
+                seg_path = f'{base}_edit{ext}'
+                create_h5(seg_path, self.data[segmentation_key], key='label', mode='w')
+                create_h5(seg_path, self.data[raw_key], key=raw_key)
+                print('labels saved')
 
-                @viewer.bind_key('H', overwrite=True)
-                def save_current(viewer):
-                    viewer.layers[1].visible = not viewer.layers[1].visible
+            @viewer.bind_key('J')
+            def _update_boundaries(viewer):
+                """Update boundaries"""
+                self.update_boundary()
+                self.get_crop()
+                self.update(viewer)
 
-                @viewer.bind_key('T', overwrite=True)
-                def save_current(viewer):
-                    print(viewer.layers[1]._selected_color)
-                    print(viewer.layers[1].color_mode)
-                    print(viewer.layers[1].selected_label)
-                    viewer.layers[1]._selected_color = [0, 0, 0, 0]
-                    viewer.layers[1].refresh()
-                    viewer.layers[1].events.selected_label()
+            @viewer.bind_key('K')
+            def _update_segmentation(viewer):
+                """Update Segmentation under cursor"""
+                x, y = viewer.layers[segmentation_key].coordinates
+                self.update_segmentation(x, y)
+                self.update_boundary()
+                self.get_crop()
+                self.update(viewer)
 
-                @viewer.bind_key('Control-=', overwrite=True)
-                def zoom_in(viewer):
-                    self.size = int(self.size * 1.25)
-                    self.get_crop()
-                    self.update(viewer)
+            @viewer.bind_key('Control-=')
+            def zoom_in(viewer):
+                """zoom in"""
+                self.size = int(self.size * 1.25)
+                self.get_crop()
+                self.update(viewer)
 
-                @viewer.bind_key('Control--', overwrite=True)
-                def zoom_out(viewer):
-                    self.size = int(self.size / 1.25)
-                    self.get_crop()
-                    self.update(viewer)
+            @viewer.bind_key('Control--')
+            def zoom_out(viewer):
+                """zoom out"""
+                self.size = int(self.size / 1.25)
+                self.get_crop()
+                self.update(viewer)
 
 
 if __name__ == '__main__':
-    BasicProofread("../../datasets/hypocotyl/train/0_19-0521-21_3.h5")()
+    BasicProofread2D(path_raw="/home/lcerrone/datasets/hypocotyl/train/0_19-0521-21_3.h5")()
