@@ -39,7 +39,7 @@ class BasicProofread2D:
         self.datasets[seg_boundaries_key] = (None, seg_boundaries_key)
         self.data[seg_boundaries_key] = self.get_seg_boundary()
 
-        assert shapes[0] == shapes[1] == shapes[2]
+        assert shapes[0] == shapes[1]
 
         self.cropped_data = {}
         self.shape = shapes[0]
