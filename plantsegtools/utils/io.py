@@ -104,6 +104,11 @@ def create_h5(path, stack, key, voxel_size=(1.0, 1.0, 1.0), mode='a'):
         f[key].attrs['element_size_um'] = voxel_size
 
 
+def del_h5_key(path, key, mode='a'):
+    with h5py.File(path, mode) as f:
+        if key in f:
+            del f[key]
+
 def create_tiff(path, stack, voxel_size):
     # taken from: https://pypi.org/project/tifffile docs
     z, y, x = stack.shape
