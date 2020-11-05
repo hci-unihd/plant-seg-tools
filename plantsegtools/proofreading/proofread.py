@@ -147,6 +147,7 @@ class BasicProofread:
         _mask = self.data[segmentation_key][bbox_slices] == label_idx
         seeds = label(_boundaries, background=1)
         seeds[~_mask] = 0
+
         _seg = watershed(np.ones_like(seeds), markers=seeds)
         _seg += self.data[segmentation_key].max() + 1
         self.data[segmentation_key][bbox_slices][_mask] = _seg[_mask].ravel()
