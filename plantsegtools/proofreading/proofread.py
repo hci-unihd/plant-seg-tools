@@ -21,6 +21,8 @@ seg_correct_cmap = {0: None,
                     1: (0.76388469, 0.02003777, 0.61156412, 1.)
                     }
 
+out_suffix = 'proofread'
+
 
 class BasicProofread:
     def __init__(self,
@@ -96,9 +98,6 @@ class BasicProofread:
     def init_layers(self, viewer):
         viewer.add_image(self.cropped_data[raw_key], name=raw_key, multiscale=False)
         viewer.add_labels(self.cropped_data[segmentation_key], name=segmentation_key, multiscale=False)
-        _rmap = np.random.rand(4)
-        _rmap[-1] = 1
-        print(_rmap)
         viewer.add_labels(self.cropped_data[seg_correct_key],
                           name=seg_correct_key,
                           color=seg_correct_cmap,
@@ -213,6 +212,14 @@ class BasicProofread:
     def load_old(self):
         self.data[segmentation_key][self.last_slices] = self.last_seg
 
+    def save_h5(self):
+        seg_path = self.datasets[segmentation_key][0]
+        base, ext = os.path.splitext(seg_path)
+        seg_path = f'{base}_{out_suffix}{ext}'
+        create_h5(seg_path, self.data[segmentation_key], key='label', mode='w')
+        create_h5(seg_path, self.data[raw_key], key=raw_key)
+        print('Label saved')
+
     def __call__(self):
         with napari.gui_qt():
             viewer = napari.Viewer()
@@ -244,13 +251,8 @@ class BasicProofread:
 
             @viewer.bind_key('S')
             def save_current(viewer):
-                """create a training stack"""
-                seg_path = self.datasets[segmentation_key][0]
-                base, ext = os.path.splitext(seg_path)
-                seg_path = f'{base}_edit{ext}'
-                create_h5(seg_path, self.data[segmentation_key], key='label', mode='w')
-                create_h5(seg_path, self.data[raw_key], key=raw_key)
-                print('Label saved')
+                """save edits on h5 and create a training ready stack"""
+                self.save_h5()
 
             @viewer.bind_key('J')
             def _update_boundaries(viewer):
@@ -319,4 +321,4 @@ if __name__ == '__main__':
     # 2D example
     BasicProofread(path_raw="/home/lcerrone/datasets/hypocotyl/train/0_19-0521-21_3.h5", z_size=3)()
     # 3D example
-    #BasicProofread(path_raw="/home/lcerrone/datasets/small_samples/sample_ovules.h5", z_size=100, xy_size=400)()
+    # BasicProofread(path_raw="/home/lcerrone/datasets/small_samples/sample_ovules.h5", z_size=100, xy_size=400)()
