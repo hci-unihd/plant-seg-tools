@@ -5,14 +5,14 @@ import numpy as np
 from skimage.measure import label
 from skimage.segmentation import find_boundaries, watershed
 from skimage.filters import sobel, gaussian
-from plantsegtools.utils import create_h5, smart_load
+from plantsegtools.utils import create_h5, smart_load, load_h5, H5_FORMATS
 
 raw_key = 'raw'
 segmentation_key = 'segmentation'
 seg_boundaries_key = 'seg-boundaries'
 seeds_merge_key = 'seeds-merge'
 seeds_split_key = 'seeds-split'
-seg_correct_key = 'seg-correct'
+seg_correct_key = 'seg-correct-mask'
 
 seg_boundaries_cmap = {0: None,
                        1: (0.05, 0.05, 0.05, 1.)
@@ -22,6 +22,8 @@ seg_correct_cmap = {0: None,
                     }
 
 out_suffix = 'proofread'
+zoom_factor = 1.25
+pixel_toll = 2
 
 
 class BasicProofread:
@@ -46,23 +48,25 @@ class BasicProofread:
             self.data[key] = stack
             shapes.append(stack.shape)
 
-        self.datasets[seg_boundaries_key] = (None, seg_boundaries_key)
-        self.datasets[seeds_merge_key] = (None, seeds_merge_key)
-        self.datasets[seeds_split_key] = (None, seeds_split_key)
-        self.datasets[seg_correct_key] = (None, seg_correct_key)
-
-        self.data[seg_boundaries_key] = self.get_seg_boundary()
-        self.data[seeds_merge_key] = np.empty((0, 3))
-        self.data[seeds_split_key] = np.zeros(shapes[0])
-        self.data[seg_correct_key] = np.zeros(shapes[0])
-
         assert shapes[0] == shapes[1]
+        self.shape = shapes[0]
 
-        self.xy_size = min(xy_size, min(shapes[0][1], shapes[0][2]))
-        self.z_size = min(z_size, shapes[0][0])
+        self.datasets[seg_boundaries_key] = (None, seg_boundaries_key)
+        self.data[seg_boundaries_key] = self.get_seg_boundary()
+
+        self.datasets[seeds_merge_key] = (None, seeds_merge_key)
+        self.data[seeds_merge_key] = np.empty((0, 3))
+
+        self.datasets[seeds_split_key] = (None, seeds_split_key)
+        self.data[seeds_split_key] = np.zeros(shapes[0])
+
+        self.datasets[seg_correct_key] = (None, seg_correct_key)
+        self.data[seg_correct_key] = self.load_correct_mask()
+
+        self.xy_size = min(xy_size, min(self.shape[1], self.shape[2]))
+        self.z_size = min(z_size, self.shape[0])
 
         self.cropped_data = {}
-        self.shape = shapes[0]
         self.z_pos = (self.shape[0]) // 2
         self.x_pos = (self.shape[1]) // 2
         self.y_pos = (self.shape[2]) // 2
@@ -72,12 +76,21 @@ class BasicProofread:
 
         self.last_slices, self.last_seg = None, None
 
+    def load_correct_mask(self):
+        seg_path = self.datasets[segmentation_key][0]
+        base, ext = os.path.splitext(seg_path)
+        if ext in H5_FORMATS:
+            seg_correct_mask, _ = load_h5(seg_path, key=seg_correct_key, safe_mode=True)
+            return np.zeros(self.shape) if seg_correct_mask is None else seg_correct_mask
+        else:
+            return np.zeros(self.shape)
+
     def get_slices(self):
-        zmin, zmax = max(self.z_pos - self.z_size // 2, 0), min(self.z_pos + self.z_size // 2, self.shape[0])
-        zmax = zmax if zmax - zmin > 0 else 1
-        xmin, xmax = max(self.x_pos - self.xy_size // 2, 0), min(self.x_pos + self.xy_size // 2, self.shape[1])
-        ymin, ymax = max(self.y_pos - self.xy_size // 2, 0), min(self.y_pos + self.xy_size // 2, self.shape[2])
-        return slice(zmin, zmax), slice(xmin, xmax), slice(ymin, ymax)
+        z_min, z_max = max(self.z_pos - self.z_size // 2, 0), min(self.z_pos + self.z_size // 2, self.shape[0])
+        z_max = z_max if z_max - z_min > 0 else 1
+        x_min, x_max = max(self.x_pos - self.xy_size // 2, 0), min(self.x_pos + self.xy_size // 2, self.shape[1])
+        y_min, y_max = max(self.y_pos - self.xy_size // 2, 0), min(self.y_pos + self.xy_size // 2, self.shape[2])
+        return slice(z_min, z_max), slice(x_min, x_max), slice(y_min, y_max)
 
     def get_crop(self):
         _slices = self.get_slices()
@@ -123,18 +136,18 @@ class BasicProofread:
         return find_boundaries(segmentation)
 
     def update_boundary(self):
-        _local_boundary = find_boundaries(self.cropped_data[segmentation_key])
-        self.data[seg_boundaries_key][self.get_slices()] = _local_boundary
+        local_boundary = find_boundaries(self.cropped_data[segmentation_key])
+        self.data[seg_boundaries_key][self.get_slices()] = local_boundary
 
     @staticmethod
     def _mask_bbox(mask):
         max_shape = mask.shape
         coords = np.nonzero(mask)
-        zmin, zmax = max(coords[0].min() - 2, 0), min(coords[0].max() + 2, max_shape[0])
-        zmax = zmax if zmax - zmin > 0 else 1
-        xmin, xmax = max(coords[1].min() - 2, 0), min(coords[1].max() + 2, max_shape[1])
-        ymin, ymax = max(coords[2].min() - 2, 0), min(coords[2].max() + 2, max_shape[2])
-        return (slice(zmin, zmax), slice(xmin, xmax), slice(ymin, ymax)), zmin, xmin, ymin
+        z_min, z_max = max(coords[0].min() - pixel_toll, 0), min(coords[0].max() + pixel_toll, max_shape[0])
+        z_max = z_max if z_max - z_min > 0 else 1
+        x_min, x_max = max(coords[1].min() - pixel_toll, 0), min(coords[1].max() + pixel_toll, max_shape[1])
+        y_min, y_max = max(coords[2].min() - pixel_toll, 0), min(coords[2].max() + pixel_toll, max_shape[2])
+        return (slice(z_min, z_max), slice(x_min, x_max), slice(y_min, y_max)), z_min, x_min, y_min
 
     def update_segmentation(self, z, x, y):
         # create bbox from mask
@@ -153,9 +166,10 @@ class BasicProofread:
 
     def merge_from_seeds(self, points):
         self._save_old(self.get_slices())
-        new_label_idx = self.cropped_data[segmentation_key][int(points[0][0]),
-                                                            int(points[0][1]),
-                                                            int(points[0][2])]
+        first_point_selected = points[0]
+        new_label_idx = self.cropped_data[segmentation_key][int(first_point_selected[0]),
+                                                            int(first_point_selected[1]),
+                                                            int(first_point_selected[2])]
 
         for i, point in enumerate(points):
             label_idx = self.cropped_data[segmentation_key][int(point[0]),
@@ -165,7 +179,6 @@ class BasicProofread:
             self.data[segmentation_key][mask] = new_label_idx
 
     def split_from_seeds(self, seeds):
-
         # find seeds location ad label value
         sz, sx, sy = np.nonzero(seeds)
         all_idx = self.cropped_data[segmentation_key][sz, sx, sy]
@@ -173,7 +186,7 @@ class BasicProofread:
 
         # create bbox from mask
         mask = np.logical_or.reduce([self.data[segmentation_key] == label_idx for label_idx in all_idx])
-        bbox_slices, zmin, xmin, ymin = self._mask_bbox(mask)
+        bbox_slices, z_min, x_min, y_min = self._mask_bbox(mask)
         self._save_old(bbox_slices)
 
         # load main bbox data
@@ -182,9 +195,9 @@ class BasicProofread:
 
         # create bbox seeds
         _seeds = np.zeros_like(_mask).astype(np.int)
-        local_sz = sz + self.z_pos - self.z_size//2 - zmin
-        local_sx = sx + self.x_pos - self.xy_size//2 - xmin
-        local_sy = sy + self.y_pos - self.xy_size//2 - ymin
+        local_sz = sz + self.z_pos - self.z_size//2 - z_min
+        local_sx = sx + self.x_pos - self.xy_size//2 - x_min
+        local_sy = sy + self.y_pos - self.xy_size//2 - y_min
         _seeds[local_sz, local_sx, local_sy] = seeds[sz, sx, sy]
 
         # tobe refactored watershed segmentation
@@ -218,6 +231,7 @@ class BasicProofread:
         seg_path = f'{base}_{out_suffix}{ext}'
         create_h5(seg_path, self.data[segmentation_key], key='label', mode='w')
         create_h5(seg_path, self.data[raw_key], key=raw_key)
+        create_h5(seg_path, self.data[seg_correct_key], key=seg_correct_key)
         print('Label saved')
 
     def __call__(self):
@@ -226,99 +240,101 @@ class BasicProofread:
             self.init_layers(viewer)
 
             @viewer.bind_key('Control-Left')
-            def move_left(viewer):
+            def move_left(_viewer):
                 """move field of view left"""
                 self.move(0, -self.stride)
-                self.update(viewer)
+                self.update(_viewer)
 
             @viewer.bind_key('Control-Right')
-            def move_right(viewer):
+            def move_right(_viewer):
                 """move field of view right"""
                 self.move(0, self.stride)
-                self.update(viewer)
+                self.update(_viewer)
 
             @viewer.bind_key('Control-Up')
-            def move_up(viewer):
+            def move_up(_viewer):
                 """move field of view up"""
                 self.move(-self.stride, 0)
-                self.update(viewer)
+                self.update(_viewer)
 
             @viewer.bind_key('Control-Down')
-            def move_down(viewer):
+            def move_down(_viewer):
                 """move field of view down"""
                 self.move(self.stride, 0)
-                self.update(viewer)
+                self.update(_viewer)
 
             @viewer.bind_key('S')
-            def save_current(viewer):
+            def save_current(_viewer):
                 """save edits on h5 and create a training ready stack"""
                 self.save_h5()
 
             @viewer.bind_key('J')
-            def _update_boundaries(viewer):
+            def _update_boundaries(_viewer):
                 """Update boundaries"""
                 self.update_boundary()
-                self.crop_update(viewer)
+                self.crop_update(_viewer)
 
             @viewer.bind_key('K')
-            def _update_segmentation(viewer):
+            def _update_segmentation(_viewer):
                 """Update Segmentation under cursor"""
-                z, x, y = viewer.layers[segmentation_key].coordinates
+                z, x, y = _viewer.layers[segmentation_key].coordinates
                 self.update_segmentation(z, x, y)
                 self.update_boundary()
-                self.crop_update(viewer)
+                self.crop_update(_viewer)
 
             @viewer.bind_key('M')
-            def _seeds_merge(viewer):
+            def _seeds_merge(_viewer):
                 """Merge label from seeds"""
-                points = viewer.layers[seeds_merge_key].data
+                points = _viewer.layers[seeds_merge_key].data
                 self.merge_from_seeds(points)
                 self.update_boundary()
-                self.crop_update(viewer)
-                viewer.layers[seeds_merge_key].data = np.empty((0, 3))
+                self.crop_update(_viewer)
+                _viewer.layers[seeds_merge_key].data = np.empty((0, 3))
 
             @viewer.bind_key('N')
-            def _seeds_split(viewer):
+            def _seeds_split(_viewer):
                 """Split label from seeds"""
-                seeds = viewer.layers[seeds_split_key].data
+                seeds = _viewer.layers[seeds_split_key].data
                 self.split_from_seeds(seeds)
                 self.update_boundary()
-                self.crop_update(viewer)
+                self.crop_update(_viewer)
 
             @viewer.bind_key('Control-B')
-            def _undo_seeds_split(viewer):
+            def _undo_seeds_split(_viewer):
                 """Undo-Split label from seeds or Undo-Merge label from seeds"""
                 self.load_old()
                 self.update_boundary()
-                self.crop_update(viewer)
+                self.crop_update(_viewer)
 
             @viewer.bind_key('C')
-            def _clean_split_seeds(viewer):
+            def _clean_split_seeds(_viewer):
                 """Clean split seeds layer"""
                 self.clean_seeds()
-                self.crop_update(viewer)
+                self.crop_update(_viewer)
 
             @viewer.bind_key('O')
-            def _seg_correct(viewer):
-                z, x, y = viewer.layers[segmentation_key].coordinates
+            def _seg_correct(_viewer):
+                z, x, y = _viewer.layers[segmentation_key].coordinates
                 self.mark_label_ok(z, x, y)
-                self.crop_update(viewer)
+                self.crop_update(_viewer)
 
             @viewer.bind_key('Control-=')
-            def zoom_in(viewer):
+            def zoom_in(_viewer):
                 """zoom in"""
-                self.xy_size = int(self.xy_size * 1.25)
-                self.crop_update(viewer)
+                self.xy_size = int(self.xy_size * zoom_factor)
+                self.crop_update(_viewer)
 
             @viewer.bind_key('Control--')
-            def zoom_out(viewer):
+            def zoom_out(_viewer):
                 """zoom out"""
-                self.xy_size = int(self.xy_size / 1.25)
-                self.crop_update(viewer)
+                self.xy_size = int(self.xy_size / zoom_factor)
+                self.crop_update(_viewer)
 
 
 if __name__ == '__main__':
     # 2D example
-    BasicProofread(path_raw="/home/lcerrone/datasets/hypocotyl/train/0_19-0521-21_3.h5", z_size=3)()
+    # BasicProofread(path_raw="/home/lcerrone/datasets/hypocotyl/train/0_19-0521-21_3.h5", z_size=3)()
+    # 2D example proofread file
+    BasicProofread(path_raw="/home/lcerrone/datasets/hypocotyl/train/0_19-0521-21_3_proofread.h5", z_size=3)()
     # 3D example
     # BasicProofread(path_raw="/home/lcerrone/datasets/small_samples/sample_ovules.h5", z_size=100, xy_size=400)()
