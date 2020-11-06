@@ -1,6 +1,5 @@
-from plantsegtools.proofreading.proofread import BasicProofread
+from plantsegtools.proofreading import BasicProofread
 import argparse
-import os
 
 
 def parse():
