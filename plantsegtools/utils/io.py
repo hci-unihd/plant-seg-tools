@@ -55,11 +55,14 @@ def read_h5_voxel_size(f, h5key):
     return voxel_size
 
 
-def load_h5(path, key, slices=None):
+def load_h5(path, key, slices=None, safe_mode=False):
 
     with h5py.File(path, 'r') as f:
         if key is None:
             key = list(f.keys())[0]
+
+        if safe_mode and key not in list(f.keys()):
+            return None, (1, 1, 1)
 
         if slices is None:
             file = f[key][...]
