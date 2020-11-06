@@ -34,10 +34,13 @@ cd plant-seg-tools
 pip install .
 ```
 ## Usage
-* from the `plant-seg-tools` directory run the proofreading tool using:
+From the `plant-seg-tools` directory run the proofreading tool using:
+* if the stack is coming from PlantSeg
 ```
-python useful-scripts/proofreading.py --path-raw 'PATHTORAWSTACK' --path-seg 'PATHTOSEGMENTATIONSTACK'
+python useful-scripts/proofreading.py --path-raw 'PATHTORAWSTACK' --path-seg 'PATHTOSEGMENTATIONSTACK' --dataset-seg segmentation
 ```
-This command works for stacks segmented with `plant-seg`
-
-**TODO** documents other options
+* if you want to continue working on a stack exported with the proofreading tool:
+```
+python useful-scripts/proofreading.py --path-raw 'PATHTORAWSTACK (convetional name *_proofreading.h5')'
+```
+**TODO** document keybinding
