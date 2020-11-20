@@ -140,7 +140,7 @@ def seg2mesh_ray(stack_path,
                  file_writer=None,
                  base_name='test_stack',
                  base_path='./test-ply/',
-                 n_process=None,
+                 n_process=-1,
                  step_size=2,
                  h5_key='label',
                  voxel_size=None,
@@ -171,7 +171,7 @@ def seg2mesh_ray(stack_path,
                                preprocessing=preprocessing,
                                )
 
-    if n_process is None:
+    if n_process > 0:
         ray.init()
     else:
         ray.init(num_cpus=n_process)
