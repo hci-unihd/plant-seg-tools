@@ -46,6 +46,7 @@ def seg2mesh_shared(stack_path,
                     max_size=np.inf,
                     idx_list=None,
                     relabel_cc=False,
+                    remove_labels=(0,)
                     ):
 
     segmentation, _voxel_size = smart_load(stack_path, h5_key)
@@ -56,7 +57,8 @@ def seg2mesh_shared(stack_path,
         idx_list, segmentation = idx_generator(segmentation,
                                                min_size=min_size,
                                                max_size=max_size,
-                                               relabel_cc=relabel_cc)
+                                               relabel_cc=relabel_cc,
+                                               remove_labels=remove_labels)
 
         return idx_list, segmentation, voxel_size
 
@@ -71,11 +73,16 @@ def _seg2mesh(idx, segmentation,
               base_path='./test-ply/',
               voxel_size=(1.0, 1.0, 1.0),
               step_size=2,
-              preprocessing=None):
+              preprocessing=None,
+              ):
 
     """basic seg2mesh loop"""
     # create mask
     mask = segmentation == idx
+
+    # check if mask is empty
+    if np.sum(mask) < 1:
+        return None
 
     # if 2D then ignore
     if not filter_2d_masks(mask):
@@ -105,6 +112,7 @@ def seg2mesh(stack_path,
              max_size=np.inf,
              idx_list=None,
              relabel_cc=False,
+             ignore_labels=(0,)
              ):
 
     idx_list, segmentation, voxel_size = seg2mesh_shared(stack_path,
@@ -115,6 +123,7 @@ def seg2mesh(stack_path,
                                                          max_size=max_size,
                                                          idx_list=idx_list,
                                                          relabel_cc=relabel_cc,
+                                                         remove_labels=ignore_labels
                                                          )
 
     partial_seg2mesh = partial(_seg2mesh,
@@ -149,6 +158,7 @@ def seg2mesh_ray(stack_path,
                  max_size=np.inf,
                  idx_list=None,
                  relabel_cc=False,
+                 ignore_labels=(0,)
                  ):
 
     idx_list, segmentation, voxel_size = seg2mesh_shared(stack_path,
@@ -159,6 +169,7 @@ def seg2mesh_ray(stack_path,
                                                          max_size=max_size,
                                                          idx_list=idx_list,
                                                          relabel_cc=relabel_cc,
+                                                         remove_labels=ignore_labels,
                                                          )
 
     partial_seg2mesh = partial(_seg2mesh,
