@@ -16,7 +16,7 @@ from plantsegtools.utils import filter_2d_masks, smart_load, relabel_segmentatio
 
 def mask2mesh(mask, mesh_processing=None, voxel_size=(1.0, 1.0, 1.0), level=0, step_size=2, preprocessing=None):
     # apply volume preprocessing
-    mask = mask if preprocessing is None else preprocessing(mask, voxel_size)
+    mask = mask if preprocessing is None else preprocessing(mask)
 
     # create mesh using marching cubes
     vertx, faces, normals, _ = measure.marching_cubes(mask, level=level, spacing=voxel_size, step_size=step_size)
