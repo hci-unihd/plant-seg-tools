@@ -1,12 +1,14 @@
 import argparse
+import glob
+import os
+import time
+from datetime import datetime
+
+import numpy as np
+
 from plantsegtools.meshes.meshes import seg2mesh, seg2mesh_ray
 from plantsegtools.meshes.vtkutils import CreateMeshVTK, create_ply
 from plantsegtools.utils import TIFF_FORMATS, H5_FORMATS, get_largest_object
-import time
-import os
-import numpy as np
-import glob
-from datetime import datetime
 
 
 def parse():
