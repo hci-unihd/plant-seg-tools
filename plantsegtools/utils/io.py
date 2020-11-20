@@ -126,4 +126,3 @@ def create_tiff(path, stack, voxel_size):
                     imagej=True,
                     resolution=resolution,
                     metadata={'axes': 'TZCYXS', 'spacing': spacing, 'unit': 'um'})
-
