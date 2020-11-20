@@ -171,14 +171,14 @@ def seg2mesh_ray(stack_path,
                                preprocessing=preprocessing,
                                )
 
-    if n_process > 0:
+    if n_process < 1:
         ray.init()
     else:
         ray.init(num_cpus=n_process)
 
     segmentation_id = ray.put(segmentation)
 
-    @ray.remote()
+    @ray.remote
     def remote_seg2mesh(idx, _segmentation_id):
         return partial_seg2mesh(idx, _segmentation_id)
 
