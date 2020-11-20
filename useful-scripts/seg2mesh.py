@@ -42,7 +42,10 @@ def parse():
     parser.add_argument('--check-cc', help='If this argument is passed the pipeline will check if each label is'
                                            ' has a single connected component (cc).'
                                            ' If multiple cc are present only the largest will be processed.',
-                        action='store_true', default=False)
+                        action='store_true')
+    parser.add_argument('--ignore-labels', help='List of labels to ignore.'
+                                                ' By default only background (label 0) is ignored',
+                        default=[0], nargs='+', type=int)
 
     # Optional - mesh processing parameters
     parser.add_argument('--reduction', type=float,
@@ -119,6 +122,7 @@ if __name__ == '__main__':
                   max_size=max_size,
                   idx_list=list_labels,
                   relabel_cc=args.relabel,
+                  ignore_labels=args.ignore_labels
                   )
 
         print(f"[{datetime.now().strftime('%d-%m-%y %H:%M:%S')}]"
