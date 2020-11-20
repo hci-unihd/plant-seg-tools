@@ -112,6 +112,7 @@ def del_h5_key(path, key, mode='a'):
         if key in f:
             del f[key]
 
+
 def create_tiff(path, stack, voxel_size):
     # taken from: https://pypi.org/project/tifffile docs
     z, y, x = stack.shape
