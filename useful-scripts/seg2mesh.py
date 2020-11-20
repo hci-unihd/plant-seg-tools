@@ -87,7 +87,7 @@ if __name__ == '__main__':
 
     # Setup mesh specific utils
 
-    # Seg2mesh mesh backend is completely independent options availables are
+    # Seg2mesh mesh backend is completely independent options available are
     # 'from plantsegtools.meshes.vtkutils import CreateMeshVTK, create_ply'
     # 'from plantsegtools.meshes.trimeshutils import CreateTriMesh, create_ply'
     # * trimesh support is experimental, is easier to use than vtk but results are worst
