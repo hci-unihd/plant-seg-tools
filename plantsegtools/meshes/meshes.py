@@ -106,6 +106,7 @@ def seg2mesh(stack_path,
              idx_list=None,
              relabel_cc=False,
              ):
+
     idx_list, segmentation, voxel_size = seg2mesh_shared(stack_path,
                                                          base_path=base_path,
                                                          h5_key=h5_key,
@@ -139,8 +140,9 @@ def seg2mesh_ray(stack_path,
                  file_writer=None,
                  base_name='test_stack',
                  base_path='./test-ply/',
-                 h5_key='label',
+                 n_process=None,
                  step_size=2,
+                 h5_key='label',
                  voxel_size=None,
                  preprocessing=None,
                  min_size=50,
@@ -169,10 +171,14 @@ def seg2mesh_ray(stack_path,
                                preprocessing=preprocessing,
                                )
 
-    ray.init()
+    if n_process is None:
+        ray.init()
+    else:
+        ray.init(num_cpus=n_process)
+
     segmentation_id = ray.put(segmentation)
 
-    @ray.remote(num_cpus=1)
+    @ray.remote()
     def remote_seg2mesh(idx, _segmentation_id):
         return partial_seg2mesh(idx, _segmentation_id)
 
