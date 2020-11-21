@@ -16,7 +16,7 @@ from plantsegtools.utils import filter_2d_masks, smart_load, relabel_segmentatio
 
 def mask2mesh(mask, mesh_processing=None, voxel_size=(1.0, 1.0, 1.0), level=0, step_size=2, preprocessing=None):
     # apply volume preprocessing
-    mask = mask if preprocessing is None else preprocessing(mask, voxel_size)
+    mask = mask if preprocessing is None else preprocessing(mask)
 
     # create mesh using marching cubes
     vertx, faces, normals, _ = measure.marching_cubes(mask, level=level, spacing=voxel_size, step_size=step_size)
@@ -46,6 +46,7 @@ def seg2mesh_shared(stack_path,
                     max_size=np.inf,
                     idx_list=None,
                     relabel_cc=False,
+                    remove_labels=(0,)
                     ):
 
     segmentation, _voxel_size = smart_load(stack_path, h5_key)
@@ -56,7 +57,8 @@ def seg2mesh_shared(stack_path,
         idx_list, segmentation = idx_generator(segmentation,
                                                min_size=min_size,
                                                max_size=max_size,
-                                               relabel_cc=relabel_cc)
+                                               relabel_cc=relabel_cc,
+                                               remove_labels=remove_labels)
 
         return idx_list, segmentation, voxel_size
 
@@ -71,11 +73,16 @@ def _seg2mesh(idx, segmentation,
               base_path='./test-ply/',
               voxel_size=(1.0, 1.0, 1.0),
               step_size=2,
-              preprocessing=None):
+              preprocessing=None,
+              ):
 
     """basic seg2mesh loop"""
     # create mask
     mask = segmentation == idx
+
+    # check if mask is empty
+    if np.sum(mask) < 1:
+        return None
 
     # if 2D then ignore
     if not filter_2d_masks(mask):
@@ -105,7 +112,9 @@ def seg2mesh(stack_path,
              max_size=np.inf,
              idx_list=None,
              relabel_cc=False,
+             ignore_labels=(0,)
              ):
+
     idx_list, segmentation, voxel_size = seg2mesh_shared(stack_path,
                                                          base_path=base_path,
                                                          h5_key=h5_key,
@@ -114,6 +123,7 @@ def seg2mesh(stack_path,
                                                          max_size=max_size,
                                                          idx_list=idx_list,
                                                          relabel_cc=relabel_cc,
+                                                         remove_labels=ignore_labels
                                                          )
 
     partial_seg2mesh = partial(_seg2mesh,
@@ -139,14 +149,16 @@ def seg2mesh_ray(stack_path,
                  file_writer=None,
                  base_name='test_stack',
                  base_path='./test-ply/',
-                 h5_key='label',
+                 n_process=-1,
                  step_size=2,
+                 h5_key='label',
                  voxel_size=None,
                  preprocessing=None,
                  min_size=50,
                  max_size=np.inf,
                  idx_list=None,
                  relabel_cc=False,
+                 ignore_labels=(0,)
                  ):
 
     idx_list, segmentation, voxel_size = seg2mesh_shared(stack_path,
@@ -157,6 +169,7 @@ def seg2mesh_ray(stack_path,
                                                          max_size=max_size,
                                                          idx_list=idx_list,
                                                          relabel_cc=relabel_cc,
+                                                         remove_labels=ignore_labels,
                                                          )
 
     partial_seg2mesh = partial(_seg2mesh,
@@ -169,10 +182,14 @@ def seg2mesh_ray(stack_path,
                                preprocessing=preprocessing,
                                )
 
-    ray.init()
+    if n_process < 1:
+        ray.init()
+    else:
+        ray.init(num_cpus=n_process)
+
     segmentation_id = ray.put(segmentation)
 
-    @ray.remote(num_cpus=1)
+    @ray.remote
     def remote_seg2mesh(idx, _segmentation_id):
         return partial_seg2mesh(idx, _segmentation_id)
 
