@@ -31,7 +31,7 @@ def parse():
     parser.add_argument("--crop", default=[0, 0, 0, -1, -1, -1], nargs='+', type=int,
                         help='Crop the dataset, takes as input a bounding box. eg --crop 10, 0, 0 15, -1, -1.')
     parser.add_argument("--voxel-size", default=None, nargs='+', type=float,
-                        help='Voxel size of the segmentation stack.'
+                        help='Voxel size [Z, Y, X] of the segmentation stack.'
                              ' By default voxel size is read from the source file,'
                              ' if this is not possible voxel-size is set to [1, 1, 1].')
     parser.add_argument('--min-size', help='Minimum cell size. Default 50.', type=int, default=50)
@@ -128,3 +128,4 @@ if __name__ == '__main__':
         print(f"[{datetime.now().strftime('%d-%m-%y %H:%M:%S')}]"
               f" process complete in {time.time() - timer: .2f}s,"
               f" number of ply generated {len(glob.glob(os.path.join(base_path, '*.ply')))}")
+        i += 1
