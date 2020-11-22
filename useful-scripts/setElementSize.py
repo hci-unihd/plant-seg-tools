@@ -32,5 +32,5 @@ if __name__ == '__main__':
         print(f"Processing {os.path.split(file_path)[1]} ({i}/{len(all_files)})")
         data = h5py.File(file_path, 'a')
         for key in data.keys():
-            data[key].attrs['element_size_um'] = f"({args.voxel_size[0]}, {args.voxel_size[1]}, {args.voxel_size[2]})"
+            data[key].attrs['element_size_um'] = (args.voxel_size[0], args.voxel_size[1], args.voxel_size[2])
         i += 1
