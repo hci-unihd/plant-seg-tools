@@ -93,7 +93,24 @@ def get_largest_object(mask):
         return labels == np.argmax(np.bincount(labels.flat)[1:]) + 1
 
 
-def filter_2d_masks(mask):
+def _filter_2d_masks(mask):
+    ### Legacy version
     _z, _x, _y = np.nonzero(mask)
     # returns True only if mask is not flat in any dimension
-    return _z.max() > _z.min() and _x.max() > _x.min() and _y.max() > _y.min()
+    return abs(_z.max() - _z.min()) > 1 and abs(_x.max() - _x.min()) > 1 and abs(_y.max() - _y.min()) > 1
+
+
+def filter_2d_masks(mask):
+    _z, _x, _y = np.nonzero(mask)
+    # Check if any dimension is flat
+    if (abs(_z.max() - _z.min()) <= 1 or
+            abs(_x.max() - _x.min()) <= 1 or
+            abs(_y.max() - _y.min()) <= 1):
+        return False
+
+    # check if the segment has any thickness
+    bbox = mask[_z.min():_z.max(), _x.min():_x.max(), _y.min():_y.max()]
+    bin_sum = np.sum(ndimage.binary_erosion(bbox, structure=np.ones((2, 2, 2)).astype(np.int)))
+
+    return True if bin_sum > 0 else False
+
