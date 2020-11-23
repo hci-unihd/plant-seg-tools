@@ -13,7 +13,7 @@ def _parse_crop(crop_str):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Copy a dataset from H5 files in source to the ones in destination. Files with identical time point in names will be matched.')
+    parser = argparse.ArgumentParser(description='Copy a dataset from one H5 to another. Files with identical time point in names will be matched.')
     parser.add_argument('--source_dir', type=str, help='Path to the source files', required=True)
     parser.add_argument('--dest_dir', type=str, help='Path to the destination files', required=True)
     parser.add_argument('--crop', type=str, help='[ZYX] cropping to apply (e.g. "[:, 0:620, 420:1750]")', default='[:,:,:]', required=False)

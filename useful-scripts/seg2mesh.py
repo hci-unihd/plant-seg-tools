@@ -33,7 +33,7 @@ def parse():
     parser.add_argument("--crop", default=[0, 0, 0, -1, -1, -1], nargs='+', type=int,
                         help='Crop the dataset, takes as input a bounding box. eg --crop 10, 0, 0 15, -1, -1.')
     parser.add_argument("--voxel-size", default=None, nargs='+', type=float,
-                        help='Voxel size of the segmentation stack.'
+                        help='Voxel size [Z, Y, X] of the segmentation stack.'
                              ' By default voxel size is read from the source file,'
                              ' if this is not possible voxel-size is set to [1, 1, 1].')
     parser.add_argument('--min-size', help='Minimum cell size. Default 50.', type=int, default=50)
@@ -104,8 +104,11 @@ if __name__ == '__main__':
     for i, file_path in enumerate(all_files, 1):
         # just use the same name as original file as base
         base_name = os.path.splitext(os.path.split(file_path)[1])[0]
-        base_path = os.path.join(os.path.split(file_path)[0],
-                                 f'{default_prefix}_{base_name}') if args.new_base is None else args.new_base
+        if args.new_base is None:
+            base_path = os.path.join(os.path.split(file_path)[0], f'{default_prefix}_{base_name}')
+        else:
+            base_path = os.path.join(args.new_base, f'{default_prefix}_{base_name}')
+        print(f"base path: {base_path}")
 
         print(f"[{datetime.now().strftime('%d-%m-%y %H:%M:%S')}]"
               f" start processing file: {os.path.split(file_path)[1]} ({i}/{len(all_files)})")
@@ -130,3 +133,4 @@ if __name__ == '__main__':
         print(f"[{datetime.now().strftime('%d-%m-%y %H:%M:%S')}]"
               f" process complete in {time.time() - timer: .2f}s,"
               f" number of ply generated {len(glob.glob(os.path.join(base_path, '*.ply')))}")
+        i += 1

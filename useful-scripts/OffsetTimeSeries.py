@@ -7,7 +7,7 @@ import os
 def main():
     parser = argparse.ArgumentParser(description='Rename files in a  time series by a specific offset.')
     parser.add_argument('--source', type=str, help='Path to the source files', required=True)
-    parser.add_argument('--offset', type=int, help='Offset to apply to the timestamps (can be neagtive)', required=True)
+    parser.add_argument('--offset', type=int, help='Offset to apply to the timestamps (can be negative)', required=True)
 
     args = parser.parse_args()
     infiles = [f for f in os.listdir(args.source) if os.path.isfile(os.path.join(args.source, f))]

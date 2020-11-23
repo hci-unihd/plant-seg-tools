@@ -111,7 +111,24 @@ def del_h5_key(path, key, mode='a'):
     with h5py.File(path, mode) as f:
         if key in f:
             del f[key]
+            f.close()
 
+
+def rename_h5_key(path, old_key, new_key, mode='r+'):
+    ''' Rename the 'old_key' dataset to 'new_key' '''
+    with h5py.File(path, mode) as f:
+        if old_key in f:
+            f[new_key] = f[old_key]
+            del f[old_key]
+            f.close()
+
+
+def rename_h5_attr(path, key, old_attr, new_attr, mode='r+'):
+        ''' Rename the attribute of dataset 'key' from 'old_attr' to 'new_attr'  '''
+        with h5py.File(path, mode) as f:
+            pass
+# http://api.h5py.org/h5a.html#h5py.h5a.rename
+# h5py.h5a.rename(myfile.id, b"name", b"newname")
 
 def create_tiff(path, stack, voxel_size):
     # taken from: https://pypi.org/project/tifffile docs
