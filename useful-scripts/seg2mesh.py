@@ -102,8 +102,11 @@ if __name__ == '__main__':
     for i, file_path in enumerate(all_files, 1):
         # just use the same name as original file as base
         base_name = os.path.splitext(os.path.split(file_path)[1])[0]
-        base_path = os.path.join(os.path.split(file_path)[0],
-                                 f'{default_prefix}_{base_name}') if args.new_base is None else args.new_base
+        if args.new_base is None:
+            base_path = os.path.join(os.path.split(file_path)[0], f'{default_prefix}_{base_name}')
+        else:
+            base_path = os.path.join(args.new_base, f'{default_prefix}_{base_name}')
+        print(f"base path: {base_path}")
 
         print(f"[{datetime.now().strftime('%d-%m-%y %H:%M:%S')}]"
               f" start processing file: {os.path.split(file_path)[1]} ({i}/{len(all_files)})")
