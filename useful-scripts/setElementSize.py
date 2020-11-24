@@ -3,7 +3,7 @@ import os
 import glob
 import argparse
 # from plantsegtools.utils.io import rename_h5_key
-# from plantsegtools.utils import  H5_FORMATS
+from plantsegtools.utils import  H5_FORMATS
 
 def parse():
     parser = argparse.ArgumentParser()
@@ -24,7 +24,7 @@ if __name__ == '__main__':
     if os.path.isfile(args.path):
         all_files = [args.path]
     elif os.path.isdir(args.path):
-        all_files = glob.glob(os.path.join(args.path, '*.h5'))
+        all_files = glob.glob(os.path.join(args.path, f'*{H5_FORMATS}'))
     else:
         raise NotImplementedError
 
