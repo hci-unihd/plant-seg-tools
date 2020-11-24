@@ -76,7 +76,12 @@ def load_h5(path, key, slices=None, safe_mode=False):
 
 def load_tiff(path):
     file = tifffile.imread(path)
-    voxel_size = read_tiff_voxel_size(path)
+    try:
+        voxel_size = read_tiff_voxel_size(path)
+    except RuntimeWarning:
+        warnings.warn('Voxel size not found, returning default [1.0, 1.0. 1.0]', RuntimeWarning)
+        voxel_size = [1.0, 1.0, 1.0]
+
     return file, voxel_size
 
 
