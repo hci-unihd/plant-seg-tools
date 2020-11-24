@@ -78,7 +78,8 @@ def load_tiff(path):
     file = tifffile.imread(path)
     try:
         voxel_size = read_tiff_voxel_size(path)
-    except RuntimeWarning:
+    except:
+        # ZeroDivisionError could happen while reading the voxel size
         warnings.warn('Voxel size not found, returning default [1.0, 1.0. 1.0]', RuntimeWarning)
         voxel_size = [1.0, 1.0, 1.0]
 
