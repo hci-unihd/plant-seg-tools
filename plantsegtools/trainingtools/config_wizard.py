@@ -87,7 +87,7 @@ _question_save_path = {'type': 'input',
 
 _question_model_name = {'type': 'list',
                         'name': None,
-                        'message': 'Do you want to train a 2D or 3D model?\n',
+                        'message': 'Do you want to train a 2D or 3D model?',
                         'choices': ['UNet3D', 'UNet2D']}
 
 _question_f_maps = {'type': 'input',
@@ -150,7 +150,7 @@ _question_stride_train = {'type': 'input',
                                      ' - (Stride size should be smaller than patch size in order to cover the all '
                                      'volume)\n'
                                      ' - (If a 2D model has been selected <z> must have stride size 1, '
-                                     'e.g [1, 256, 256])\n',
+                                     'e.g [1, 256, 256])',
                           'validate': IntListValidator,
                           'filter': lambda var: string_to_int_list(var)}
 
@@ -160,7 +160,7 @@ _question_stride_val = {'type': 'input',
                                    ' - (Stride size should be smaller than patch size in order to cover the all '
                                    'volume)\n'
                                    ' - (If a 2D model has been selected <z> must have stride size 1, '
-                                   'e.g [1, 256, 256])\n',
+                                   'e.g [1, 256, 256])',
                         'validate': IntListValidator,
                         'filter': lambda var: string_to_int_list(var)}
 
