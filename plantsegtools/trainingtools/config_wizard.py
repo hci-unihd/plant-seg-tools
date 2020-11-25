@@ -148,7 +148,7 @@ _question_stride_train = {'type': 'input',
                           'name': None,
                           'message': 'Change the default training stride size?\n'
                                      ' - (Stride size should be smaller than patch size in order to cover the all '
-                                     'volume\n'
+                                     'volume)\n'
                                      ' - (If a 2D model has been selected <z> must have stride size 1, '
                                      'e.g [1, 256, 256])\n',
                           'validate': IntListValidator,
@@ -158,12 +158,19 @@ _question_stride_val = {'type': 'input',
                         'name': None,
                         'message': 'Change the default validation stride size?\n'
                                    ' - (Stride size should be smaller than patch size in order to cover the all '
-                                   'volume\n'
+                                   'volume)\n'
                                    ' - (If a 2D model has been selected <z> must have stride size 1, '
                                    'e.g [1, 256, 256])\n',
                         'validate': IntListValidator,
                         'filter': lambda var: string_to_int_list(var)}
 
+_question_batch_size = {'type': 'input',
+                        'name': None,
+                        'message': 'Change the default batch size?\n'
+                                   ' - (Bigger batch size improve learning stability and (sometimes) performance,'
+                                   ' but requires a lot of GPU memory.) \n',
+                        'validate': IntListValidator,
+                        'filter': lambda var: string_to_int_list(var)}
 
 def train_configurator_wizard(data_path, config=None):
 
@@ -176,6 +183,7 @@ def train_configurator_wizard(data_path, config=None):
                 'learning_rate': (['optimizer', 'learning_rate'], _question_learning_rate),
                 'weight_decay': (['optimizer', 'weight_decay'], _question_weight_decay),
                 'checkpoint_dir': (['trainer', 'checkpoint_dir'], _question_checkpoint_dir),
+                'batch_size': (['loaders', 'batch_size'], _question_batch_size),
                 'files_train': (['loaders', 'train', 'file_paths'], _question_files_train),
                 'patch_train': (['loaders', 'train', 'slice_builder', 'patch_shape'], _question_patch_train),
                 'stride_train': (['loaders', 'train', 'slice_builder', 'stride_shape'], _question_stride_train),
