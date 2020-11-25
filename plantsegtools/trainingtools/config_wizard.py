@@ -169,8 +169,9 @@ _question_batch_size = {'type': 'input',
                         'message': 'Change the default batch size?\n'
                                    ' - (Bigger batch size improve learning stability and (sometimes) performance,'
                                    ' but requires a lot of GPU memory.) \n',
-                        'validate': IntListValidator,
-                        'filter': lambda var: string_to_int_list(var)}
+                        'validate': NumberValidator,
+                        'filter': lambda val: int(val)}
+
 
 def train_configurator_wizard(data_path, config=None):
 
