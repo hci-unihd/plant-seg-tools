@@ -20,17 +20,6 @@ class NumberValidator(Validator):
                 cursor_position=len(document.text))  # Move cursor to end
 
 
-class ModelValidator(Validator):
-    def validate(self, document):
-        import torch
-        try:
-            torch.load(document.text, map_location=torch.device('cpu'))
-        except ValueError:
-            raise ValidationError(
-                message='Failed to load the model',
-                cursor_position=len(document.text))  # Move cursor to end
-
-
 class FloatValidator(Validator):
     def validate(self, document):
         try:
@@ -187,8 +176,7 @@ _question_pre_trained = {'type': 'input',
                          'name': None,
                          'message': 'Start from pretrained model?\n'
                                     ' - (path to a pre-trained checkpoint, '
-                                    'eg. PATH/last_checkpoint.pytorch)',
-                         'validate': ModelValidator}
+                                    'eg. PATH/last_checkpoint.pytorch)'}
 
 
 def train_configurator_wizard(data_path, config=None):
