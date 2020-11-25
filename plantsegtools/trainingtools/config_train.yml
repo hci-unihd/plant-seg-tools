@@ -50,6 +50,8 @@ trainer:
   checkpoint_dir: './'
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null
+  # path to a pre-trained checkpoint
+  pre_trained: null
   # how many iterations between validations
   validate_after_iters: 500
   # how many iterations between tensorboard logging

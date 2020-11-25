@@ -20,6 +20,17 @@ class NumberValidator(Validator):
                 cursor_position=len(document.text))  # Move cursor to end
 
 
+class ModelValidator(Validator):
+    def validate(self, document):
+        import torch
+        try:
+            torch.load(document.text, map_location=torch.device('cpu'))
+        except ValueError:
+            raise ValidationError(
+                message='Failed to load the model',
+                cursor_position=len(document.text))  # Move cursor to end
+
+
 class FloatValidator(Validator):
     def validate(self, document):
         try:
@@ -150,7 +161,7 @@ _question_stride_train = {'type': 'input',
                                      ' - (Stride size should be smaller than patch size in order to cover the all '
                                      'volume)\n'
                                      ' - (If a 2D model has been selected <z> must have stride size 1, '
-                                     'e.g [1, 256, 256])',
+                                     'eg. [1, 256, 256])',
                           'validate': IntListValidator,
                           'filter': lambda var: string_to_int_list(var)}
 
@@ -160,7 +171,7 @@ _question_stride_val = {'type': 'input',
                                    ' - (Stride size should be smaller than patch size in order to cover the all '
                                    'volume)\n'
                                    ' - (If a 2D model has been selected <z> must have stride size 1, '
-                                   'e.g [1, 256, 256])',
+                                   'eg. [1, 256, 256])',
                         'validate': IntListValidator,
                         'filter': lambda var: string_to_int_list(var)}
 
@@ -171,6 +182,13 @@ _question_batch_size = {'type': 'input',
                                    ' but requires a lot of GPU memory.)',
                         'validate': NumberValidator,
                         'filter': lambda val: int(val)}
+
+_question_pre_trained = {'type': 'input',
+                         'name': None,
+                         'message': 'Start from pretrained model?\n'
+                                    ' - (path to a pre-trained checkpoint, '
+                                    'eg. PATH/last_checkpoint.pytorch)',
+                         'validate': ModelValidator}
 
 
 def train_configurator_wizard(data_path, config=None):
@@ -184,6 +202,7 @@ def train_configurator_wizard(data_path, config=None):
                 'learning_rate': (['optimizer', 'learning_rate'], _question_learning_rate),
                 'weight_decay': (['optimizer', 'weight_decay'], _question_weight_decay),
                 'checkpoint_dir': (['trainer', 'checkpoint_dir'], _question_checkpoint_dir),
+                'pre_trained': (['trainer', 'pre_trained'], _question_pre_trained),
                 'batch_size': (['loaders', 'batch_size'], _question_batch_size),
                 'files_train': (['loaders', 'train', 'file_paths'], _question_files_train),
                 'patch_train': (['loaders', 'train', 'slice_builder', 'patch_shape'], _question_patch_train),
