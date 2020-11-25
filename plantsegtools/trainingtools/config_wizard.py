@@ -168,7 +168,7 @@ _question_batch_size = {'type': 'input',
                         'name': None,
                         'message': 'Change the default batch size?\n'
                                    ' - (Bigger batch size improve learning stability and (sometimes) performance,'
-                                   ' but requires a lot of GPU memory.) \n',
+                                   ' but requires a lot of GPU memory.)',
                         'validate': NumberValidator,
                         'filter': lambda val: int(val)}
 
