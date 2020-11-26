@@ -3,13 +3,10 @@ import glob
 import re
 import h5py
 import os
+from plantsegtools.utils.edit import parse_crop
 
 
-def _parse_crop(crop_str):
-    crop_str = crop_str.replace('[', '').replace(']', '')
-    return tuple(
-        (slice(*(int(i) if i else None for i in part.strip().split(':'))) if ':' in part else int(part.strip())) for
-        part in crop_str.split(','))
+
 
 
 def main():
@@ -30,7 +27,7 @@ def main():
             tp_dest = re.search('[tT](\d{1,})', filename_dest).group(1)
             if tp_source == tp_dest:
                 print(f"{filename_source}/['{args.source_dataset}'] ---> {filename_dest}/['{args.dest_dataset}']")
-                crop = _parse_crop(args.crop)
+                crop = parse_crop(args.crop)
                 with h5py.File(source_file, 'r+') as source:
                     d_source = source[args.source_dataset][crop]
                 with h5py.File(dest_file, 'a') as dest:
