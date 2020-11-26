@@ -318,13 +318,13 @@ class BasicProofread:
                 self.mark_label_ok(z, x, y)
                 self.crop_update(_viewer)
 
-            @viewer.bind_key('Control-=')
+            @viewer.bind_key('Alt-Up')
             def zoom_in(_viewer):
                 """zoom in"""
                 self.xy_size = int(self.xy_size * zoom_factor)
                 self.crop_update(_viewer)
 
-            @viewer.bind_key('Control--')
+            @viewer.bind_key('Alt-Down')
             def zoom_out(_viewer):
                 """zoom out"""
                 self.xy_size = int(self.xy_size / zoom_factor)

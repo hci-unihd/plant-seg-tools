@@ -17,6 +17,21 @@ cd plant-seg-tools
 pip install .
 ```
 
+## additional dependencies
+While having your conda environment activated:
+* In order to use the `vtk` backend of `plantsegtools/meshes`, you will need to install `vtk` using:
+```
+conda install -c conda-forge vtk
+```
+* In order to use the `trimesh` backend of `plantsegtools/meshes`, you will need to install `trimesh` using:
+```
+conda install -c conda-forge trimesh
+```
+* In order to use the training configurator wizard you need to install `PyInquirer`
+```
+pip install PyInquirer
+```
+
 ## Install proofreading tool
 * create a new conda environment (at the moment plant-seg and the proofreading tools are not compatible). 
 On a fresh terminal execute:
@@ -33,6 +48,7 @@ git clone https://github.com/hci-unihd/plant-seg-tools.git
 cd plant-seg-tools
 pip install .
 ```
+
 ## Usage
 From the `plant-seg-tools` directory run the proofreading tool using:
 * if the stack is coming from PlantSeg
