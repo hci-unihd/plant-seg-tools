@@ -27,6 +27,7 @@ class get3dds():
     def __init__(self):
         self.sets3d = []
         self.sets_n3d = []
+
     def __call__(self, name, node):
         if isinstance(node, h5py.Dataset):
             if len(node.shape) > 2 :
@@ -37,7 +38,7 @@ class get3dds():
 
 
 if __name__ == '__main__':
-    '''Crop all 3D datasets of  an h5 file, leaves other untouched, saves a copy.'''
+    '''Crop all >=3D datasets of  an h5 file, leaves other untouched, saves a copy.'''
     args = parse()
 
     # Setup input path
@@ -54,9 +55,6 @@ if __name__ == '__main__':
         fname = os.path.splitext(os.path.basename(file_path))[0]
         outfname = f"{fname}_crop.h5"
         outpath = os.path.join(path, outfname)
-        # Get the slice from the crop values
-        crop = parse_crop(args.crop)
-        print(crop)
 
         print(f"Processing {fname}.h5 ({i}/{len(all_files)})")
         with h5py.File(file_path, 'r') as f:
@@ -66,9 +64,11 @@ if __name__ == '__main__':
                 f.visititems(d3ds)
                 for ds in d3ds.sets3d:
                     # Process the 3D datasets --> crop
-                    if len(f[ds].shape) == 4:
-                        crop  = (slice(None, None, None), *crop)
-                        print(crop)
+                    if len(f[ds].shape) == 3:
+                        crop = parse_crop(args.crop)
+                    else:
+                        crop = parse_crop(args.crop)
+                        crop = (slice(None, None, None), *crop)
                     crop_ds = f[ds][crop]
                     #store the attributes
                     _temp ={}
