@@ -20,7 +20,7 @@ def main():
     args = parser.parse_args()
     for source_file in glob.glob(os.path.join(args.source_dir, '*.h5')):
         filename_source = os.path.split(source_file)[1]
-        tp_source = re.search('[Tt](\d{1,})\.', filename_source).group(1)
+        tp_source = re.search('[Tt](\d{1,})', filename_source).group(1)
 
         for dest_file in glob.glob(os.path.join(args.dest_dir, '*.h5')):
             filename_dest = os.path.split(dest_file)[1]
