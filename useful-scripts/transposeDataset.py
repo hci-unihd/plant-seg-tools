@@ -31,22 +31,22 @@ if __name__ == '__main__':
 
     for i, file_path in enumerate(all_files, 1):
         print(f"Processing {os.path.split(file_path)[1]} ({i}/{len(all_files)})")
-        data = h5py.File(file_path, 'r+')
-        for key in data.keys():
-            if len(data[key].shape) == 3:
-                print(f"{key}: {data[key].shape}", end="", flush=True)
-                # store the attributes
-                _temp ={}
-                for k,v in data[key].attrs.items():
-                    _temp[k] = v
-                # Transpose the data
-                t_data = np.transpose(data[key], (args.new_order[0], args.new_order[1], args.new_order[2]))
-                # erase the dataset
-                del data[key]
-                # create the transposed one
-                data.create_dataset(key,  data=t_data, compression='gzip')
-                print(f" --> {data[key].shape}")
-                # reassign the attributes
-                for k,v in _temp.items():
-                    data[key].attrs[k] = v
+        with h5py.File(file_path, 'r+') as data
+            for key in data.keys():
+                if len(data[key].shape) == 3:
+                    print(f"{key}: {data[key].shape}", end="", flush=True)
+                    # store the attributes
+                    _temp ={}
+                    for k,v in data[key].attrs.items():
+                        _temp[k] = v
+                    # Transpose the data
+                    t_data = np.transpose(data[key], (args.new_order[0], args.new_order[1], args.new_order[2]))
+                    # erase the dataset
+                    del data[key]
+                    # create the transposed one
+                    data.create_dataset(key,  data=t_data, compression='gzip')
+                    print(f" --> {data[key].shape}")
+                    # reassign the attributes
+                    for k,v in _temp.items():
+                        data[key].attrs[k] = v
     i += 1

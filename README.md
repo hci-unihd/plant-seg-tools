@@ -36,7 +36,7 @@ pip install PyInquirer
 * create a new conda environment (at the moment plant-seg and the proofreading tools are not compatible). 
 On a fresh terminal execute:
 ```
-conda create -n plant-seg-proofreading -c conda-forge python=3.7 numpy numba scipy matplotlib scikit-image pyaml h5py tqdm napari
+conda create -n plant-seg-proofreading -c conda-forge python numpy numba scipy matplotlib scikit-image pyaml h5py tqdm napari pyqt=5.12.3
 conda activate plant-seg-proofreading
 ```
 * clone this repository locally on our machine, in the terminal navigate to the desired install location and execute:

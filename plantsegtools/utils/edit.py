@@ -9,6 +9,13 @@ except:
     from skimage.filters import gaussian as gaussianSmoothing
 
 
+def parse_crop(crop_str):
+    '''Return a tuple with a slice object from a string (ex. "[:, 0:620, 420:1750]") '''
+    crop_str = crop_str.replace('[', '').replace(']', '')
+    return tuple(
+        (slice(*(int(i) if i else None for i in part.strip().split(':'))) if ':' in part else int(part.strip())) for
+        part in crop_str.split(','))
+
 def crop_image(image, start=(0, 0, 0), end=(-1, -1, -1)):
     assert image.ndim == 2 or image.ndim == 3
     assert len(start) == len(end) == image.ndim
