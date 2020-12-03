@@ -11,7 +11,7 @@ def parse():
 
 if __name__ == '__main__':
     args = parse()
-    if len(glob.glob(args.path + '/**/*.h5')) < 2:
+    if len(glob.glob(args.path + '/**/*.h5', recursive=True)) < 2:
         print("Please provide a root path with at least two h5 stacks (one for training one for validation)")
     else:
         train_configurator_wizard(args.path)
