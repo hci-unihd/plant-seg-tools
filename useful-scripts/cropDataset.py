@@ -2,8 +2,8 @@ import h5py
 import os
 import glob
 import argparse
-import numpy as np
-from plantsegtools.utils import  H5_FORMATS
+from plantsegtools.utils import H5_FORMATS
+
 
 def parse_crop(crop_str):
     '''Return a tuple with a slice object from a string (ex. "[:, 0:620, 420:1750]") '''
@@ -11,6 +11,7 @@ def parse_crop(crop_str):
     return tuple(
         (slice(*(int(i) if i else None for i in part.strip().split(':'))) if ':' in part else int(part.strip())) for
         part in crop_str.split(','))
+
 
 def parse():
     parser = argparse.ArgumentParser()
@@ -30,7 +31,7 @@ class get3dds():
 
     def __call__(self, name, node):
         if isinstance(node, h5py.Dataset):
-            if len(node.shape) > 2 :
+            if len(node.shape) > 2:
                 self.sets3d.append(name)
             else:
                 self.sets_n3d.append(name)
@@ -70,8 +71,8 @@ if __name__ == '__main__':
                         crop = parse_crop(args.crop)
                         crop = (slice(None, None, None), *crop)
                     crop_ds = f[ds][crop]
-                    #store the attributes
-                    _temp ={}
+                    # store the attributes
+                    _temp = {}
                     for k, v in f[ds].attrs.items():
                         _temp[k] = v
                     # Write cropped dataset to outfile
@@ -81,8 +82,8 @@ if __name__ == '__main__':
                         fc[ds].attrs[k] = v
                 for ds in d3ds.sets_n3d:
                     # For the not 3D datasets, copy them to the outfile
-                    #store the attributes
-                    _temp ={}
+                    # store the attributes
+                    _temp = {}
                     for k, v in f[ds].attrs.items():
                         _temp[k] = v
                     # Copy dataset to outfile
