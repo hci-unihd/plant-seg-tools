@@ -6,9 +6,6 @@ import os
 from plantsegtools.utils.edit import parse_crop
 
 
-
-
-
 def main():
     parser = argparse.ArgumentParser(description='Copy a dataset from one H5 to another. Files with identical time point in names will be matched.')
     parser.add_argument('--source_dir', type=str, help='Path to the source files', required=True)
@@ -31,7 +28,10 @@ def main():
                 with h5py.File(source_file, 'r+') as source:
                     d_source = source[args.source_dataset][crop]
                 with h5py.File(dest_file, 'a') as dest:
-                    dest.create_dataset('/' + args.dest_dataset, data=d_source, compression='gzip')
+                    if args.dest_dataset in dest:
+                        dest[args.dest_dataset] = d_source
+                    else:
+                        dest.create_dataset('/' + args.dest_dataset, data=d_source, compression='gzip')
                 dest.close()
                 source.close()
 
