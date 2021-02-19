@@ -29,7 +29,7 @@ def main():
                     d_source = source[args.source_dataset][crop]
                 with h5py.File(dest_file, 'a') as dest:
                     if args.dest_dataset in dest:
-                        dest[args.dest_dataset] = d_source
+                        dest[args.dest_dataset][:]= d_source
                     else:
                         dest.create_dataset('/' + args.dest_dataset, data=d_source, compression='gzip')
                 dest.close()
