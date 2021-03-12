@@ -5,7 +5,7 @@ import numpy as np
 from skimage.measure import label
 from skimage.segmentation import find_boundaries, watershed
 from skimage.filters import sobel, gaussian
-from plantsegtools.utils import create_h5, smart_load, load_h5, H5_FORMATS
+from plantsegtools.utils import create_h5, smart_load, load_h5, H5_FORMATS, relabel_segmentation
 
 raw_key = 'raw'
 segmentation_key = 'segmentation'
@@ -225,6 +225,11 @@ class BasicProofread:
     def load_old(self):
         self.data[segmentation_key][self.last_slices] = self.last_seg
 
+    def relabel_seg(self):
+        """print relabeling segmentation"""
+        seg = self.data[segmentation_key]
+        self.data[segmentation_key] = relabel_segmentation(seg)
+
     def save_h5(self):
         seg_path = self.datasets[segmentation_key][0]
         base, ext = os.path.splitext(seg_path)
@@ -266,7 +271,9 @@ class BasicProofread:
             @viewer.bind_key('S')
             def save_current(_viewer):
                 """save edits on h5 and create a training ready stack"""
+                self.relabel_seg()
                 self.save_h5()
+                self.crop_update(_viewer)
 
             @viewer.bind_key('J')
             def _update_boundaries(_viewer):
