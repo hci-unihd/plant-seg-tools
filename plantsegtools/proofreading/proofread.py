@@ -225,10 +225,13 @@ class BasicProofread:
     def load_old(self):
         self.data[segmentation_key][self.last_slices] = self.last_seg
 
-    def relabel_seg(self):
+    def relabel_seg(self, bg_id=0):
         """print relabeling segmentation"""
         seg = self.data[segmentation_key]
-        self.data[segmentation_key] = relabel_segmentation(seg)
+        bg_mask = seg == bg_id
+        new_seg = relabel_segmentation(seg)
+        new_seg[bg_mask] = 0
+        self.data[segmentation_key] = new_seg
 
     def save_h5(self):
         seg_path = self.datasets[segmentation_key][0]
