@@ -45,6 +45,8 @@ class BasicProofread:
         for key, values in self.datasets.items():
             _path, _key = values
             stack, voxel_size = smart_load(_path, _key)
+            if stack.ndim == 2:
+                stack = stack[None, ...]
             self.data[key] = stack
             shapes.append(stack.shape)
 
@@ -194,7 +196,7 @@ class BasicProofread:
         _raw = self.data[raw_key][bbox_slices]
 
         # create bbox seeds
-        _seeds = np.zeros_like(_mask).astype(np.int)
+        _seeds = np.zeros_like(_mask).astype(np.int64)
         local_sz = sz + self.z_pos - self.z_size//2 - z_min
         local_sx = sx + self.x_pos - self.xy_size//2 - x_min
         local_sy = sy + self.y_pos - self.xy_size//2 - y_min
@@ -229,7 +231,7 @@ class BasicProofread:
         """print relabeling segmentation"""
         seg = self.data[segmentation_key]
         bg_mask = seg == bg_id
-        new_seg = relabel_segmentation(seg)
+        new_seg = relabel_segmentation(seg).astype(np.uint16)
         new_seg[bg_mask] = 0
         self.data[segmentation_key] = new_seg
 
