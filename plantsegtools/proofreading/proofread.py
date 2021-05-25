@@ -6,6 +6,7 @@ from skimage.measure import label
 from skimage.segmentation import find_boundaries, watershed
 from skimage.filters import sobel, gaussian
 from plantsegtools.utils import create_h5, smart_load, load_h5, H5_FORMATS, relabel_segmentation
+from plantsegtools.postprocess.seg_nuclei_consistency import get_bbox
 
 raw_key = 'raw'
 segmentation_key = 'segmentation'
@@ -141,21 +142,11 @@ class BasicProofread:
         local_boundary = find_boundaries(self.cropped_data[segmentation_key])
         self.data[seg_boundaries_key][self.get_slices()] = local_boundary
 
-    @staticmethod
-    def _mask_bbox(mask):
-        max_shape = mask.shape
-        coords = np.nonzero(mask)
-        z_min, z_max = max(coords[0].min() - pixel_toll, 0), min(coords[0].max() + pixel_toll, max_shape[0])
-        z_max = z_max if z_max - z_min > 0 else 1
-        x_min, x_max = max(coords[1].min() - pixel_toll, 0), min(coords[1].max() + pixel_toll, max_shape[1])
-        y_min, y_max = max(coords[2].min() - pixel_toll, 0), min(coords[2].max() + pixel_toll, max_shape[2])
-        return (slice(z_min, z_max), slice(x_min, x_max), slice(y_min, y_max)), z_min, x_min, y_min
-
     def update_segmentation(self, z, x, y):
         # create bbox from mask
         label_idx = self.cropped_data[segmentation_key][int(z), int(x), int(y)]
         mask = self.data[segmentation_key] == label_idx
-        bbox_slices, _, _, _ = self._mask_bbox(mask)
+        bbox_slices, _, _, _ = get_bbox(mask)
 
         _boundaries = self.data[seg_boundaries_key][bbox_slices]
         _mask = self.data[segmentation_key][bbox_slices] == label_idx
@@ -188,7 +179,7 @@ class BasicProofread:
 
         # create bbox from mask
         mask = np.logical_or.reduce([self.data[segmentation_key] == label_idx for label_idx in all_idx])
-        bbox_slices, z_min, x_min, y_min = self._mask_bbox(mask)
+        bbox_slices, z_min, x_min, y_min = get_bbox(mask)
         self._save_old(bbox_slices)
 
         # load main bbox data
