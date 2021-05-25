@@ -127,6 +127,7 @@ def fix_under_segmentation(segmentation,
                            cell_assignments,
                            cell_idx=None):
     _segmentation = copy.deepcopy(segmentation)
+    print(" -fixing under segmentation")
     for c_idx, value in tqdm.tqdm(cell_assignments.items()):
 
         if cell_idx is None or c_idx in cell_idx:
@@ -142,6 +143,7 @@ def fix_over_segmentation(segmentation,
                           nuclei_assignments,
                           nuclei_idx=None):
     _segmentation = copy.deepcopy(segmentation)
+    print(" -fixing over segmentation")
     for n_idx, value in tqdm.tqdm(nuclei_assignments.items()):
 
         if nuclei_idx is None or n_idx in nuclei_idx:

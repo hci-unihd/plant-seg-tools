@@ -14,7 +14,7 @@ def parse():
     parser.add_argument("--t-split", type=float, default=0.66, help='Overlap split threshold, between 0-1')
     parser.add_argument("--quantiles", default=[0.3, 0.99], nargs='+', type=float,
                         help='Nuclei size below and above the defined quantiles will be ignored')
-    parser.add_argument("--scaling", default=[1, 4, 4], nargs='+', type=int,
+    parser.add_argument("--scaling", default=[1, 2, 2], nargs='+', type=int,
                         help='Scaling factor for the segmentation')
     parser.add_argument("--export-h5",
                         action='store_true', default=False,
