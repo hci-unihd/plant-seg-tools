@@ -1,1 +1,2 @@
 include plantsegtools/trainingtools/config_train.yml
+include plantsegtools/postprocess/lmc_config.yaml
