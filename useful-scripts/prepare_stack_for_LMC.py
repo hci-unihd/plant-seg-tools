@@ -14,9 +14,7 @@ def parse():
     parser.add_argument("--nuclei-path", type=str, help='path to nuclei segmentation file')
     parser.add_argument("--seg2pmap", action='store_true', default=False,
                         help='In order to export the segmentation as h5.')
-    parser.add_argument("--scaling-pre", default=[1, 1, 1], nargs='+', type=int,
-                        help='Scaling factor for the segmentation')
-    parser.add_argument("--scaling-post", default=[1, 1, 1], nargs='+', type=int,
+    parser.add_argument("--scaling", default=[1.0, 1.0, 1.0], nargs='+', type=float,
                         help='Scaling factor for the segmentation')
     return parser.parse_args()
 
@@ -36,13 +34,14 @@ def seg2pmap(nuclei_seg):
 
 def _prepare_stack_for_lmc():
     args = parse()
-    scaling_pre = np.array(args.scaling_pre)
+    scaling_pre = np.array(args.scaling)
 
     boundaries, voxel_size = smart_load(args.boundaries_path, key='predictions')
     assert boundaries.ndim in {3, 4}
     boundaries = boundaries[0] if boundaries.ndim == 4 else boundaries
 
-    if np.prod(scaling_pre) != 1:
+    if abs(np.prod(scaling_pre) - 1) > 1e-8:
+        print(" -scaling boundary predictions")
         boundaries = zoom(boundaries, scaling_pre, order=1)
         voxel_size *= scaling_pre
     boundaries_shape = np.array(boundaries.shape)
@@ -53,7 +52,7 @@ def _prepare_stack_for_lmc():
     nuclei_pmap_shape = np.array(nuclei_pmap.shape)
 
     if args.seg2pmap:
-        print('transforming nuclei segmentation in pmaps')
+        print(' -transforming nuclei segmentation in pmaps')
         nuclei_pmap = seg2pmap(nuclei_pmap)
 
     if not np.allclose(nuclei_pmap_shape, boundaries_shape):
@@ -68,7 +67,7 @@ def _prepare_stack_for_lmc():
     base_dir, _ = os.path.split(base)
 
     res_dir = f'{base_dir}/LMC_base/'
-    print(f"Preparing all results in {res_dir}")
+    print(f" -preparing all results in {res_dir}")
     os.makedirs(res_dir, exist_ok=True)
 
     boundaries_path = f'{res_dir}/{filename}_boundaries_predictions.h5'
