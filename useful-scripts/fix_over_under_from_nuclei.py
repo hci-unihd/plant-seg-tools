@@ -14,7 +14,7 @@ def parse():
     parser.add_argument("--t-split", type=float, default=0.66, help='Overlap split threshold, between 0-1')
     parser.add_argument("--quantiles", default=[0.3, 0.99], nargs='+', type=float,
                         help='Nuclei size below and above the defined quantiles will be ignored')
-    parser.add_argument("--scaling", default=[1, 1, 1], nargs='+', type=int,
+    parser.add_argument("--scaling", default=[1.0, 1.0, 1.0], nargs='+', type=float,
                         help='Scaling factor for the segmentation')
     parser.add_argument("--export-h5",
                         action='store_true', default=False,
@@ -28,8 +28,9 @@ def _fix_over_under_segmentation_from_nuclei():
     scaling = np.array(args.scaling)
 
     cell_seg, voxel_size = smart_load(args.seg_path, key='segmentation')
-    if np.prod(scaling) != 1:
-        cell_seg = cell_seg[::scaling[0], ::scaling[1], ::scaling[2]]
+    if abs(np.prod(scaling) - 1) > 1e-8:
+        print(" -scaling boundary predictions")
+        cell_seg = zoom(cell_seg, scaling, order=0)
         voxel_size *= scaling
     cell_seg_shape = np.array(cell_seg.shape)
 
@@ -46,7 +47,7 @@ def _fix_over_under_segmentation_from_nuclei():
         if not np.allclose(boundaries_shape, cell_seg_shape):
             # fix boundary shape if necessary
             print(f" -fix boundaries shape {boundaries_shape} to cell segmentation size, {cell_seg_shape}")
-            boundaries = zoom(boundaries, cell_seg_shape / boundaries_shape, order=0)
+            boundaries = zoom(boundaries, cell_seg_shape / boundaries_shape, order=1)
 
     else:
         boundaries, _ = None, None

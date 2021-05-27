@@ -78,7 +78,7 @@ segmentation:
   # sigma for the gaussian smoothing of boundary
   ws_w_sigma: 0
   # set the minimum segment size in the final segmentation
-  post_minsize: 50000
+  post_minsize: 50
 
 segmentation_postprocessing:
   # enable/disable segmentation post processing
