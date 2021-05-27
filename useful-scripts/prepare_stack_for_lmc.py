@@ -70,14 +70,14 @@ def _prepare_stack_for_lmc():
     boundaries = boundaries[None, ...] if boundaries.ndim == 3 else boundaries
 
     if args.seg_mode:
-        nuclei_pmap = nuclei_pmap.astype('uint32')
+        nuclei_pmap = nuclei_pmap.astype('uint16')
         nuclei_key = 'segmentation'
     else:
         nuclei_pmap = nuclei_pmap.astype(np.float32)
         nuclei_pmap = nuclei_pmap / np.max(nuclei_pmap)
         nuclei_pmap = nuclei_pmap[None, ...] if nuclei_pmap.ndim == 3 else nuclei_pmap
         nuclei_key = 'predictions'
-
+    nuclei_pmap = nuclei_pmap[None, ...] if nuclei_pmap.ndim == 3 else nuclei_pmap
     base, _ = os.path.splitext(args.boundaries_path)
     filename = base.split('/')[-1]
     base_dir, _ = os.path.split(base)
