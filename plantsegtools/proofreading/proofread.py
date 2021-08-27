@@ -61,7 +61,7 @@ class BasicProofread:
         self.data[seeds_merge_key] = np.empty((0, 3))
 
         self.datasets[seeds_split_key] = (None, seeds_split_key)
-        self.data[seeds_split_key] = np.zeros(shapes[0])
+        self.data[seeds_split_key] = np.zeros(shapes[0]).astype('uint32')
 
         self.datasets[seg_correct_key] = (None, seg_correct_key)
         self.data[seg_correct_key] = self.load_correct_mask()
@@ -82,11 +82,13 @@ class BasicProofread:
     def load_correct_mask(self):
         seg_path = self.datasets[segmentation_key][0]
         base, ext = os.path.splitext(seg_path)
+        seg_correct_mask = None
+
         if ext in H5_FORMATS:
             seg_correct_mask, _ = load_h5(seg_path, key=seg_correct_key, safe_mode=True)
-            return np.zeros(self.shape) if seg_correct_mask is None else seg_correct_mask
-        else:
-            return np.zeros(self.shape)
+
+        seg_correct_mask = np.zeros(self.shape) if seg_correct_mask is None else seg_correct_mask
+        return seg_correct_mask.astype('uint8')
 
     def get_slices(self):
         z_min, z_max = max(self.z_pos - self.z_size // 2, 0), min(self.z_pos + self.z_size // 2, self.shape[0])
@@ -236,102 +238,105 @@ class BasicProofread:
         print('Label saved')
 
     def __call__(self):
-        with napari.gui_qt():
-            viewer = napari.Viewer()
-            self.init_layers(viewer)
+        viewer = napari.Viewer()
+        self.init_layers(viewer)
 
-            @viewer.bind_key('Control-Left')
-            def move_left(_viewer):
-                """move field of view left"""
-                self.move(0, -self.stride)
-                self.update(_viewer)
+        @viewer.bind_key('Control-Left')
+        def move_left(_viewer):
+            """move field of view left"""
+            self.move(0, -self.stride)
+            self.update(_viewer)
 
-            @viewer.bind_key('Control-Right')
-            def move_right(_viewer):
-                """move field of view right"""
-                self.move(0, self.stride)
-                self.update(_viewer)
+        @viewer.bind_key('Control-Right')
+        def move_right(_viewer):
+            """move field of view right"""
+            self.move(0, self.stride)
+            self.update(_viewer)
 
-            @viewer.bind_key('Control-Up')
-            def move_up(_viewer):
-                """move field of view up"""
-                self.move(-self.stride, 0)
-                self.update(_viewer)
+        @viewer.bind_key('Control-Up')
+        def move_up(_viewer):
+            """move field of view up"""
+            self.move(-self.stride, 0)
+            self.update(_viewer)
 
-            @viewer.bind_key('Control-Down')
-            def move_down(_viewer):
-                """move field of view down"""
-                self.move(self.stride, 0)
-                self.update(_viewer)
+        @viewer.bind_key('Control-Down')
+        def move_down(_viewer):
+            """move field of view down"""
+            self.move(self.stride, 0)
+            self.update(_viewer)
 
-            @viewer.bind_key('S')
-            def save_current(_viewer):
-                """save edits on h5 and create a training ready stack"""
-                self.relabel_seg()
-                self.save_h5()
-                self.crop_update(_viewer)
+        @viewer.bind_key('S')
+        def save_current(_viewer):
+            """save edits on h5 and create a training ready stack"""
+            self.relabel_seg()
+            self.save_h5()
+            self.crop_update(_viewer)
 
-            @viewer.bind_key('J')
-            def _update_boundaries(_viewer):
-                """Update boundaries"""
-                self.update_boundary()
-                self.crop_update(_viewer)
+        @viewer.bind_key('J')
+        def _update_boundaries(_viewer):
+            """Update boundaries"""
+            self.update_boundary()
+            self.crop_update(_viewer)
 
-            @viewer.bind_key('K')
-            def _update_segmentation(_viewer):
-                """Update Segmentation under cursor"""
-                z, x, y = _viewer.layers[segmentation_key].coordinates
-                self.update_segmentation(z, x, y)
-                self.update_boundary()
-                self.crop_update(_viewer)
+        @viewer.bind_key('K')
+        def _update_segmentation(_viewer):
+            """Update Segmentation under cursor"""
+            _pos = viewer.cursor.position
+            z, x, y = _viewer.layers[segmentation_key].world_to_data(_pos)
+            self.update_segmentation(z, x, y)
+            self.update_boundary()
+            self.crop_update(_viewer)
 
-            @viewer.bind_key('M')
-            def _seeds_merge(_viewer):
-                """Merge label from seeds"""
-                points = _viewer.layers[seeds_merge_key].data
-                self.merge_from_seeds(points)
-                self.update_boundary()
-                self.crop_update(_viewer)
-                _viewer.layers[seeds_merge_key].data = np.empty((0, 3))
+        @viewer.bind_key('M')
+        def _seeds_merge(_viewer):
+            """Merge label from seeds"""
+            points = _viewer.layers[seeds_merge_key].data
+            self.merge_from_seeds(points)
+            self.update_boundary()
+            self.crop_update(_viewer)
+            _viewer.layers[seeds_merge_key].data = np.empty((0, 3))
 
-            @viewer.bind_key('N')
-            def _seeds_split(_viewer):
-                """Split label from seeds"""
-                seeds = _viewer.layers[seeds_split_key].data
-                self.split_from_seeds(seeds)
-                self.update_boundary()
-                self.crop_update(_viewer)
+        @viewer.bind_key('N')
+        def _seeds_split(_viewer):
+            """Split label from seeds"""
+            seeds = _viewer.layers[seeds_split_key].data
+            self.split_from_seeds(seeds)
+            self.update_boundary()
+            self.crop_update(_viewer)
 
-            @viewer.bind_key('Control-B')
-            def _undo_seeds_split(_viewer):
-                """Undo-Split label from seeds or Undo-Merge label from seeds"""
-                self.load_old()
-                self.update_boundary()
-                self.crop_update(_viewer)
+        @viewer.bind_key('Control-B')
+        def _undo_seeds_split(_viewer):
+            """Undo-Split label from seeds or Undo-Merge label from seeds"""
+            self.load_old()
+            self.update_boundary()
+            self.crop_update(_viewer)
 
-            @viewer.bind_key('C')
-            def _clean_split_seeds(_viewer):
-                """Clean split seeds layer"""
-                self.clean_seeds()
-                self.crop_update(_viewer)
+        @viewer.bind_key('C')
+        def _clean_split_seeds(_viewer):
+            """Clean split seeds layer"""
+            self.clean_seeds()
+            self.crop_update(_viewer)
 
-            @viewer.bind_key('O')
-            def _seg_correct(_viewer):
-                z, x, y = _viewer.layers[segmentation_key].coordinates
-                self.mark_label_ok(z, x, y)
-                self.crop_update(_viewer)
+        @viewer.bind_key('O')
+        def _seg_correct(_viewer):
+            _pos = viewer.cursor.position
+            z, x, y = _viewer.layers[segmentation_key].world_to_data(_pos)
+            self.mark_label_ok(z, x, y)
+            self.crop_update(_viewer)
 
-            @viewer.bind_key('Alt-Up')
-            def zoom_in(_viewer):
-                """zoom in"""
-                self.xy_size = int(self.xy_size * zoom_factor)
-                self.crop_update(_viewer)
+        @viewer.bind_key('Alt-Up')
+        def zoom_in(_viewer):
+            """zoom in"""
+            self.xy_size = int(self.xy_size * zoom_factor)
+            self.crop_update(_viewer)
 
-            @viewer.bind_key('Alt-Down')
-            def zoom_out(_viewer):
-                """zoom out"""
-                self.xy_size = int(self.xy_size / zoom_factor)
-                self.crop_update(_viewer)
+        @viewer.bind_key('Alt-Down')
+        def zoom_out(_viewer):
+            """zoom out"""
+            self.xy_size = int(self.xy_size / zoom_factor)
+            self.crop_update(_viewer)
+
+        napari.run()
 
 
 if __name__ == '__main__':
