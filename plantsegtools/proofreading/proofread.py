@@ -54,6 +54,8 @@ class BasicProofread:
         assert shapes[0] == shapes[1]
         self.shape = shapes[0]
 
+        self.data[segmentation_key] = self.data[segmentation_key].astype('uint32')
+
         self.datasets[seg_boundaries_key] = (None, seg_boundaries_key)
         self.data[seg_boundaries_key] = self.get_seg_boundary()
 
@@ -148,7 +150,7 @@ class BasicProofread:
         # create bbox from mask
         label_idx = self.cropped_data[segmentation_key][int(z), int(x), int(y)]
         mask = self.data[segmentation_key] == label_idx
-        bbox_slices, _, _, _ = get_bbox(mask)
+        bbox_slices, _, _, _ = get_bbox(mask, pixel_toll=2)
 
         _boundaries = self.data[seg_boundaries_key][bbox_slices]
         _mask = self.data[segmentation_key][bbox_slices] == label_idx
@@ -233,6 +235,7 @@ class BasicProofread:
         base, ext = os.path.splitext(seg_path)
         seg_path = f'{base}_{out_suffix}{ext}'
         create_h5(seg_path, self.data[segmentation_key], key='label', mode='w')
+        create_h5(seg_path, self.data[segmentation_key].astype('uint16'), key='label_uint16', mode='w')
         create_h5(seg_path, self.data[raw_key], key=raw_key)
         create_h5(seg_path, self.data[seg_correct_key], key=seg_correct_key)
         print('Label saved')
