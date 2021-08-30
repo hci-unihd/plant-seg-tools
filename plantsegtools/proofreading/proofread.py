@@ -138,7 +138,7 @@ class BasicProofread:
 
     def get_seg_boundary(self):
         segmentation = self.data[segmentation_key]
-        return find_boundaries(segmentation)
+        return find_boundaries(segmentation).astype('uint8')
 
     def update_boundary(self):
         local_boundary = find_boundaries(self.cropped_data[segmentation_key])
