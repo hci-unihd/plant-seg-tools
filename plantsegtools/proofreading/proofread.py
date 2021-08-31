@@ -235,7 +235,7 @@ class BasicProofread:
         base, ext = os.path.splitext(seg_path)
         seg_path = f'{base}_{out_suffix}{ext}'
         create_h5(seg_path, self.data[segmentation_key], key='label', mode='w')
-        create_h5(seg_path, self.data[segmentation_key].astype('uint16'), key='label_uint16', mode='w')
+        create_h5(seg_path, self.data[segmentation_key].astype('uint16'), key='label_uint16')
         create_h5(seg_path, self.data[raw_key], key=raw_key)
         create_h5(seg_path, self.data[seg_correct_key], key=seg_correct_key)
         print('Label saved')
