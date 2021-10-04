@@ -80,8 +80,10 @@ def import_labels_csv(path, csv_columns=('cell_ids', 'cell_labels')):
     return np.array(cell_ids, dtype='int32'), np.array(cell_labels, dtype='int32')
 
 
-def main():
-    args = parse()
+def main(args=None):
+
+    if args is None:
+        args = parse()
 
     # copy stain
     raw, voxel_size = smart_load(args.stain)

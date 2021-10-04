@@ -31,7 +31,7 @@ if __name__ == '__main__':
 
     for i, file_path in enumerate(all_files, 1):
         print(f"Processing {os.path.split(file_path)[1]} ({i}/{len(all_files)})")
-        with h5py.File(file_path, 'r+') as data
+        with h5py.File(file_path, 'r+') as data:
             for key in data.keys():
                 if len(data[key].shape) == 3:
                     print(f"{key}: {data[key].shape}", end="", flush=True)
