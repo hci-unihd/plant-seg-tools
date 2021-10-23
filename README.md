@@ -50,7 +50,7 @@ pip install .
 ```
 
 ## Index
-* [Segmentation to Meshes](#Segmentation to Meshes)
+* [Segmentation to Meshes](##Segmentation to Meshes)
 * [Proofreading tool](#Proofreading tool)
 * [Automated Segmentation Proofread from seeds](#Automated Segmentation Proofread from seeds)
 
