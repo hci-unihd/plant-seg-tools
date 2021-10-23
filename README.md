@@ -17,11 +17,11 @@ cd plant-seg-tools
 pip install .
 ```
 
-## additional dependencies
+## Additional dependencies
 While having your conda environment activated:
-* In order to use the `vtk` backend of `plantsegtools/meshes`, you will need to install `vtk` using:
+* In oder to use `seg2mesh`
 ```
-conda install -c conda-forge vtk
+conda install -c conda-forge ray vtk
 ```
 * In order to use the `trimesh` backend of `plantsegtools/meshes`, you will need to install `trimesh` using:
 ```
@@ -62,7 +62,7 @@ From the project root (`plant-seg-tools`) run the `seg2mesh` script using:
 python useful-scripts/seg2mesh.py --path 'PATHTOSEGMENTATIONSTACK'
 ```
 
-### Optional arguments guide
+#### Optional arguments guide
 * `--new-base`: optional custom saving directory. 
 If not given the ply will be saved in the same dir as the source.
 * `--h5-dataset`: h5 internal dataset name. Default: segmentation.
@@ -114,6 +114,16 @@ python useful-scripts/proofreading.py -r 'PATHTORAWSTACK (convetional name *_pro
 * `ctrl + arrows`: to move the field of view
 * `alt + down/up arrows`: to increase or decrease the field of view
 
+#### Optional arguments guide
+* `-dr` or `--dataset-raw`: name of the dataset containing the raw boundary image.
+Only used if raw boundary image is in `h5` format. default `raw`.
+* `-ds` or `--dataset-seg`: name of the dataset containing the cell segmentation.
+Only used if segmentation is in `h5` format. default `label`.
+* `-xy` or `--xy-size`: field of view size along the xy-plane. Larger field of view might slow down the tool.
+* `-z` or `--z-size`: field of view size along z. Only for 3D. Larger field of view might slow down the tool.
+
+
+
 ## Automated Segmentation Proofread from seeds
 
 ### Basic usage
@@ -121,7 +131,7 @@ python useful-scripts/proofreading.py -r 'PATHTORAWSTACK (convetional name *_pro
 python useful-scripts/fix_over_under_from_nuclei.py --seg-path 'PATHTOSEGMENTATIONSTACK' --nuclei-seg-path 'PATHTONUCLEISEGMENTATIONSTACK' 
 ```
 
-### Optional arguments guide
+#### Optional arguments guide
   * `--t-merge`: Overlap merging threshold, between 0-1.
   * `--t-split`: Overlap split threshold, between 0-1.
   * `--quantiles`: Nuclei size below and above the defined quantiles will be ignored.
