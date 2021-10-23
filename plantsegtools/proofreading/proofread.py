@@ -4,14 +4,14 @@ import napari
 import numpy as np
 from skimage.measure import label
 from skimage.segmentation import find_boundaries, watershed
-from skimage.filters import sobel, gaussian
+from skimage.filters import gaussian
 from plantsegtools.utils import create_h5, smart_load, load_h5, H5_FORMATS, relabel_segmentation
 from plantsegtools.postprocess.seg_nuclei_consistency import get_bbox
+from magicgui import magicgui
 
 raw_key = 'raw'
 segmentation_key = 'segmentation'
 seg_boundaries_key = 'seg-boundaries'
-seeds_merge_key = 'seeds-merge'
 seeds_split_key = 'seeds-split'
 seg_correct_key = 'seg-correct-mask'
 
@@ -25,6 +25,7 @@ seg_correct_cmap = {0: None,
 out_suffix = 'proofread'
 zoom_factor = 1.25
 pixel_toll = 2
+max_height = 60
 
 
 class BasicProofread:
@@ -58,9 +59,6 @@ class BasicProofread:
 
         self.datasets[seg_boundaries_key] = (None, seg_boundaries_key)
         self.data[seg_boundaries_key] = self.get_seg_boundary()
-
-        self.datasets[seeds_merge_key] = (None, seeds_merge_key)
-        self.data[seeds_merge_key] = np.empty((0, 3))
 
         self.datasets[seeds_split_key] = (None, seeds_split_key)
         self.data[seeds_split_key] = np.zeros(shapes[0]).astype('uint32')
@@ -101,35 +99,32 @@ class BasicProofread:
 
     def get_crop(self):
         _slices = self.get_slices()
-        print(f"current slice: {_slices}")
+        print(f'current slice: {_slices}')
         for key, value in self.data.items():
-            if key not in [seeds_merge_key]:
-                self.cropped_data[key] = value[_slices]
+            self.cropped_data[key] = value[_slices]
 
     def update(self, viewer):
         for _layer_key in viewer.layers:
-            if _layer_key.name not in [seeds_merge_key]:
-                viewer.layers[_layer_key.name].data = self.cropped_data[_layer_key.name]
+            viewer.layers[_layer_key.name].data = self.cropped_data[_layer_key.name]
 
     def crop_update(self, viewer):
         self.get_crop()
         self.update(viewer)
 
-    def init_layers(self, viewer):
-        viewer.add_image(self.cropped_data[raw_key], name=raw_key, multiscale=False)
-        viewer.add_labels(self.cropped_data[segmentation_key], name=segmentation_key, multiscale=False)
-        viewer.add_labels(self.cropped_data[seg_correct_key],
-                          name=seg_correct_key,
-                          color=seg_correct_cmap,
-                          opacity=1,
-                          multiscale=False)
-        viewer.add_labels(self.cropped_data[seeds_split_key], name=seeds_split_key)
-        viewer.add_points(self.data[seeds_merge_key], name=seeds_merge_key)
-        viewer.add_labels(self.cropped_data[seg_boundaries_key],
-                          name=seg_boundaries_key,
-                          color=seg_boundaries_cmap,
-                          opacity=1,
-                          multiscale=False)
+    def init_layers(self):
+        self.viewer.add_image(self.cropped_data[raw_key], name=raw_key, multiscale=False)
+        self.viewer.add_labels(self.cropped_data[segmentation_key], name=segmentation_key, multiscale=False)
+        self.viewer.add_labels(self.cropped_data[seg_correct_key],
+                               name=seg_correct_key,
+                               color=seg_correct_cmap,
+                               opacity=1,
+                               multiscale=False)
+        self.viewer.add_labels(self.cropped_data[seeds_split_key], name=seeds_split_key)
+        self.viewer.add_labels(self.cropped_data[seg_boundaries_key],
+                               name=seg_boundaries_key,
+                               color=seg_boundaries_cmap,
+                               opacity=1,
+                               multiscale=False)
 
     def move(self, x, y):
         self.x_pos += x
@@ -160,20 +155,6 @@ class BasicProofread:
         _seg = watershed(np.ones_like(seeds), markers=seeds)
         _seg += self.data[segmentation_key].max() + 1
         self.data[segmentation_key][bbox_slices][_mask] = _seg[_mask].ravel()
-
-    def merge_from_seeds(self, points):
-        self._save_old(self.get_slices())
-        first_point_selected = points[0]
-        new_label_idx = self.cropped_data[segmentation_key][int(first_point_selected[0]),
-                                                            int(first_point_selected[1]),
-                                                            int(first_point_selected[2])]
-
-        for i, point in enumerate(points):
-            label_idx = self.cropped_data[segmentation_key][int(point[0]),
-                                                            int(point[1]),
-                                                            int(point[2])]
-            mask = self.data[segmentation_key] == label_idx
-            self.data[segmentation_key][mask] = new_label_idx
 
     def split_from_seeds(self, seeds):
         # find seeds location ad label value
@@ -241,111 +222,133 @@ class BasicProofread:
         print('Label saved')
 
     def __call__(self):
-        viewer = napari.Viewer()
-        self.init_layers(viewer)
+        self.viewer = napari.Viewer()
+        self.init_layers()
 
-        @viewer.bind_key('Control-Left')
+        @self.viewer.bind_key('Control-Left')
         def move_left(_viewer):
             """move field of view left"""
             self.move(0, -self.stride)
             self.update(_viewer)
 
-        @viewer.bind_key('Control-Right')
+        @self.viewer.bind_key('Control-Right')
         def move_right(_viewer):
             """move field of view right"""
             self.move(0, self.stride)
             self.update(_viewer)
 
-        @viewer.bind_key('Control-Up')
+        @self.viewer.bind_key('Control-Up')
         def move_up(_viewer):
             """move field of view up"""
             self.move(-self.stride, 0)
             self.update(_viewer)
 
-        @viewer.bind_key('Control-Down')
+        @self.viewer.bind_key('Control-Down')
         def move_down(_viewer):
             """move field of view down"""
             self.move(self.stride, 0)
             self.update(_viewer)
 
-        @viewer.bind_key('S')
+        @self.viewer.bind_key('S')
         def save_current(_viewer):
             """save edits on h5 and create a training ready stack"""
             self.relabel_seg()
             self.save_h5()
             self.crop_update(_viewer)
 
-        @viewer.bind_key('J')
-        def _update_boundaries(_viewer):
-            """Update boundaries"""
-            self.update_boundary()
-            self.crop_update(_viewer)
+        @magicgui(call_button="Save (S)")
+        def save_current_button():
+            save_current(self.viewer)
 
-        @viewer.bind_key('K')
-        def _update_segmentation(_viewer):
-            """Update Segmentation under cursor"""
-            _pos = viewer.cursor.position
-            z, x, y = _viewer.layers[segmentation_key].world_to_data(_pos)
-            self.update_segmentation(z, x, y)
-            self.update_boundary()
-            self.crop_update(_viewer)
+        dock_save = self.viewer.window.add_dock_widget(save_current_button)
+        dock_save.setMaximumHeight(max_height)
 
-        @viewer.bind_key('M')
-        def _seeds_merge(_viewer):
-            """Merge label from seeds"""
-            points = _viewer.layers[seeds_merge_key].data
-            self.merge_from_seeds(points)
-            self.update_boundary()
-            self.crop_update(_viewer)
-            _viewer.layers[seeds_merge_key].data = np.empty((0, 3))
-
-        @viewer.bind_key('N')
-        def _seeds_split(_viewer):
+        @self.viewer.bind_key('N')
+        def seeds_merge_split(_viewer):
             """Split label from seeds"""
             seeds = _viewer.layers[seeds_split_key].data
             self.split_from_seeds(seeds)
             self.update_boundary()
             self.crop_update(_viewer)
 
-        @viewer.bind_key('Control-B')
-        def _undo_seeds_split(_viewer):
+        @magicgui(call_button="Split / Merge (N)")
+        def seed_merge_split_dock():
+            seeds_merge_split(self.viewer)
+        merge_split_dock = self.viewer.window.add_dock_widget(seed_merge_split_dock)
+        merge_split_dock.setMaximumHeight(max_height)
+
+        @self.viewer.bind_key('Control-N')
+        def undo_seed_merge_split(_viewer):
             """Undo-Split label from seeds or Undo-Merge label from seeds"""
             self.load_old()
             self.update_boundary()
             self.crop_update(_viewer)
 
-        @viewer.bind_key('C')
-        def _clean_split_seeds(_viewer):
+        @magicgui(call_button="Undo - Split / Merge (Ctrl + N)")
+        def undo_seed_merge_split_dock():
+            undo_seed_merge_split(self.viewer)
+
+        undo_merge_split_dock = self.viewer.window.add_dock_widget(undo_seed_merge_split_dock)
+        undo_merge_split_dock.setMaximumHeight(max_height)
+
+        @self.viewer.bind_key('C')
+        def clean_split_seeds(_viewer):
             """Clean split seeds layer"""
             self.clean_seeds()
             self.crop_update(_viewer)
 
-        @viewer.bind_key('O')
+        @magicgui(call_button="Clean Seeds (C)")
+        def clean_split_seeds_dock():
+            clean_split_seeds(self.viewer)
+
+        split_dock = self.viewer.window.add_dock_widget(clean_split_seeds_dock)
+        split_dock.setMaximumHeight(max_height)
+
+        @self.viewer.bind_key('O')
         def _seg_correct(_viewer):
-            _pos = viewer.cursor.position
+            _pos = _viewer.cursor.position
             z, x, y = _viewer.layers[segmentation_key].world_to_data(_pos)
             self.mark_label_ok(z, x, y)
             self.crop_update(_viewer)
 
-        @viewer.bind_key('Alt-Up')
+        @self.viewer.bind_key('J')
+        def update_boundaries(_viewer):
+            """Update boundaries"""
+            self.update_boundary()
+            self.crop_update(_viewer)
+
+        @self.viewer.bind_key('B')
+        def show_un_show_corrected_labels(_viewer):
+            """Update Segmentation under cursor"""
+            _pos = _viewer.cursor.position
+            _viewer.layers[seg_correct_key].visible = not _viewer.layers[seg_correct_key].visible
+
+        @magicgui(call_button="Toggle Correct Layer (B)")
+        def show_un_show_corrected_labels_dock():
+            show_un_show_corrected_labels(self.viewer)
+
+        show_un_show_corrected_labels_dock_wb = self.viewer.window.add_dock_widget(show_un_show_corrected_labels_dock)
+        show_un_show_corrected_labels_dock_wb.setMaximumHeight(max_height)
+
+        @self.viewer.bind_key('K')
+        def update_segmentation(_viewer):
+            """Update Segmentation under cursor"""
+            _pos = _viewer.cursor.position
+            z, x, y = _viewer.layers[segmentation_key].world_to_data(_pos)
+            self.update_segmentation(z, x, y)
+            self.update_boundary()
+            self.crop_update(_viewer)
+
+        @self.viewer.bind_key('Alt-Up')
         def zoom_in(_viewer):
             """zoom in"""
             self.xy_size = int(self.xy_size * zoom_factor)
             self.crop_update(_viewer)
 
-        @viewer.bind_key('Alt-Down')
+        @self.viewer.bind_key('Alt-Down')
         def zoom_out(_viewer):
             """zoom out"""
             self.xy_size = int(self.xy_size / zoom_factor)
             self.crop_update(_viewer)
 
         napari.run()
-
-
-if __name__ == '__main__':
-    # 2D example
-    # BasicProofread(path_raw="/home/lcerrone/datasets/hypocotyl/train/0_19-0521-21_3.h5", z_size=3)()
-    # 2D example proofread file
-    BasicProofread(path_raw="/home/lcerrone/datasets/hypocotyl/train/0_19-0521-21_3_proofread.h5", z_size=3)()
-    # 3D example
-    # BasicProofread(path_raw="/home/lcerrone/datasets/small_samples/sample_ovules.h5", z_size=100, xy_size=400)()
