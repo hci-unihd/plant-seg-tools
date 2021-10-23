@@ -1,7 +1,13 @@
 # plant-seg-tools
 Simple python tools for plant-seg https://github.com/hci-unihd/plant-seg
 
-## Install tools
+## Index
+* [Install PlantSeg Tools](#install-plantseg-tools)
+* [Segmentation to Meshes](#segmentation-to-meshes)
+* [Proofreading tool](#proofreading-tool)
+* [Automated Segmentation Proofread from seeds](#automated-segmentation-proofread-from-seeds)
+
+## Install PlantSeg Tools
 * Install `plant-seg` from https://github.com/hci-unihd/plant-seg
 * activate `plant-seg` environment using:
 ```
@@ -17,7 +23,7 @@ cd plant-seg-tools
 pip install .
 ```
 
-## Additional dependencies
+### Additional dependencies
 While having your conda environment activated:
 * In oder to use `seg2mesh`
 ```
@@ -32,7 +38,7 @@ conda install -c conda-forge trimesh
 pip install PyInquirer
 ```
 
-## Install proofreading tool
+### Install proofreading tool
 * create a new conda environment (at the moment plant-seg and the proofreading tools are not compatible). 
 On a fresh terminal execute:
 ```
@@ -48,11 +54,6 @@ git clone https://github.com/hci-unihd/plant-seg-tools.git
 cd plant-seg-tools
 pip install .
 ```
-
-## Index
-* [Segmentation to Meshes](#segmentation-to-meshes)
-* [Proofreading tool](#Proofreading tool)
-* [Automated Segmentation Proofread from seeds](#Automated Segmentation Proofread from seeds)
 
 ## Segmentation to Meshes
 
