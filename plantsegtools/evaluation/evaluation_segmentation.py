@@ -49,6 +49,9 @@ def run_evaluation(gt_array, seg_array, remove_background=True):
     seg_array = seg_array.astype(np.uint32)
     gt_array = gt_array.astype(np.uint32)
 
+    if seg_array.ndim == 3 and seg_array.shape[0] == 1:
+        seg_array = seg_array[0, ...]
+
     # Resize segmentation to gt size for apple to apple comparison in the scores
     if seg_array.shape != gt_array.shape:
         print("- Segmentation shape:", seg_array.shape,
