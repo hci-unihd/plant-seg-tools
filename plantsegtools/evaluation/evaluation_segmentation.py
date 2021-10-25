@@ -21,7 +21,7 @@ def parse():
                         required=False, help='if h5 contains dataset name to segmentation')
     parser.add_argument('-g', '--path-gt', type=str, required=False, help='path to ground-truth file')
     parser.add_argument('-dg', '--dataset-gt', type=str, default='label',
-                        required=False, help='if h5 contains dataset name to segmentation')
+                        required=False, help='if h5 contains dataset name to ground-truth')
     return parser.parse_args()
 
 

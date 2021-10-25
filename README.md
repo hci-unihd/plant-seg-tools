@@ -6,6 +6,7 @@ Simple python tools for plant-seg https://github.com/hci-unihd/plant-seg
 * [Segmentation to Meshes](#segmentation-to-meshes)
 * [Proofreading tool](#proofreading-tool)
 * [Automated Segmentation Proofread from seeds](#automated-segmentation-proofread-from-seeds)
+* [Evaluation](#evaluation)
 
 ## Install PlantSeg Tools
 * Install `plant-seg` from https://github.com/hci-unihd/plant-seg
@@ -146,3 +147,11 @@ python useful-scripts/fix_over_under_from_nuclei.py --seg-path 'PATHTOSEGMENTATI
   * `--boundaries-path`: path to boundaries predictions file.
 
 
+## Evaluation
+### Basic usage
+```
+python useful-scripts/evaluation_segmentation.py -s PATHTOSEG -g PATHTOGT 
+```
+#### Optional arguments guide
+* `-ds` or `--dataset-seg`: if h5 contains dataset name to segmentation 
+* * `-dg` or `--dataset-gt`: if h5 contains dataset name to ground-truth
