@@ -102,6 +102,11 @@ python useful-scripts/proofreading.py --r 'PATHTORAWSTACK' -s 'PATHTOSEGMENTATIO
 ```
 python useful-scripts/proofreading.py -r 'PATHTORAWSTACK (convetional name *_proofreading.h5')'
 ```
+
+### add to bashrc
+```
+alias  proofreading="[user-dir-location]/miniconda3/envs/plant-seg-proofreading/bin/python [plant-seg-tools-location]/plant-seg-tools/useful-scripts/proofreading.py"
+```
 #### Keybinding Guide:
 * `s`: Save stack
 * `n`: Merge or split from seeds
