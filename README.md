@@ -28,7 +28,9 @@ pip install .
 While having your conda environment activated:
 * In oder to use `seg2mesh`
 ```
-conda install -c conda-forge ray vtk
+conda activate plant-seg
+pip install -U "ray[default]"
+conda install conda-forge::vtk
 ```
 * In order to use the `trimesh` backend of `plantsegtools/meshes`, you will need to install `trimesh` using:
 ```

@@ -13,7 +13,7 @@ def ndarray2vtkMesh(inVertexArray, inFacesArray):
         vtk_points.InsertNextPoint([p[0], p[1], z_value])
     number_of_points = vtk_points.GetNumberOfPoints()
 
-    indices = np.array(range(number_of_points), dtype=np.int)
+    indices = np.array(range(number_of_points), dtype=int)
     vtk_vertices = vtkCellArray()
     for v in indices:
         vtk_vertices.InsertNextCell(1)

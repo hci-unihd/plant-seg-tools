@@ -110,7 +110,7 @@ def filter_2d_masks(mask):
 
     # check if the segment has any thickness
     bbox = mask[_z.min():_z.max(), _x.min():_x.max(), _y.min():_y.max()]
-    bin_sum = np.sum(ndimage.binary_erosion(bbox, structure=np.ones((2, 2, 2)).astype(np.int)))
+    bin_sum = np.sum(ndimage.binary_erosion(bbox, structure=np.ones((2, 2, 2)).astype(int)))
 
     return True if bin_sum > 0 else False
 
